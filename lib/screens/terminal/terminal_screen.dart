@@ -31,6 +31,7 @@ import '../../widgets/image_transfer_confirm_dialog.dart';
 import '../../widgets/tmux_tiles.dart';
 import '../../providers/terminal_display_provider.dart';
 import '../../providers/image_transfer_provider.dart';
+import '../file_browser/file_browser_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import '../settings/settings_screen.dart';
 import 'widgets/ansi_text_view.dart';
@@ -1531,6 +1532,18 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
               valueListenable: _viewNotifier,
               builder: (context, viewData, _) => _buildConnectionIndicator(viewData.latency),
             ),
+            // File browser button
+            IconButton(
+              onPressed: _handleFileBrowser,
+              icon: Icon(
+                Icons.folder_outlined,
+                size: 16,
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(),
+              tooltip: 'File Browser',
+            ),
             // Settings button
             IconButton(
               onPressed: _showTerminalMenu,
@@ -3007,6 +3020,20 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
         );
       }
     });
+  }
+
+  /// ファイルブラウザを開く
+  void _handleFileBrowser() {
+    final activePaneId = ref.read(tmuxProvider).activePaneId;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FileBrowserScreen(
+          connectionId: widget.connectionId,
+          paneId: activePaneId,
+        ),
+      ),
+    );
   }
 
   /// 画像転送フローを開始
