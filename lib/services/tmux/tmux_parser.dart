@@ -279,6 +279,7 @@ class TmuxParser {
       final paneCurrentCommand = parts.length > 14 && parts[14].isNotEmpty ? parts[14] : null;
       final cursorX = parts.length > 15 ? int.tryParse(parts[15]) ?? 0 : 0;
       final cursorY = parts.length > 16 ? int.tryParse(parts[16]) ?? 0 : 0;
+      final paneCurrentPath = parts.length > 17 && parts[17].isNotEmpty ? parts[17] : null;
 
       // セッションを取得または作成
       sessionsMap.putIfAbsent(
@@ -286,7 +287,7 @@ class TmuxParser {
         () => TmuxSession(name: sessionName, id: sessionId),
       );
 
-      final windowFlags = parts.length > 17 ? _parseWindowFlags(parts[17]) : const <TmuxWindowFlag>{};
+      final windowFlags = parts.length > 18 ? _parseWindowFlags(parts[18]) : const <TmuxWindowFlag>{};
 
       // ウィンドウマップを取得または作成
       windowsMap.putIfAbsent(sessionName, () => {});
@@ -317,6 +318,7 @@ class TmuxParser {
         currentCommand: paneCurrentCommand,
         cursorX: cursorX,
         cursorY: cursorY,
+        currentPath: paneCurrentPath,
       ));
     }
 
@@ -555,6 +557,7 @@ class TmuxPane {
   final int top;
   final int cursorX;
   final int cursorY;
+  final String? currentPath;
 
   const TmuxPane({
     required this.index,
@@ -568,6 +571,7 @@ class TmuxPane {
     this.top = 0,
     this.cursorX = 0,
     this.cursorY = 0,
+    this.currentPath,
   });
 
   TmuxPane copyWith({
@@ -582,6 +586,7 @@ class TmuxPane {
     int? top,
     int? cursorX,
     int? cursorY,
+    String? currentPath,
   }) {
     return TmuxPane(
       index: index ?? this.index,
@@ -595,6 +600,7 @@ class TmuxPane {
       top: top ?? this.top,
       cursorX: cursorX ?? this.cursorX,
       cursorY: cursorY ?? this.cursorY,
+      currentPath: currentPath ?? this.currentPath,
     );
   }
 

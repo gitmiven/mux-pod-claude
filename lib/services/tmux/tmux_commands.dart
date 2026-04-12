@@ -160,6 +160,7 @@ class TmuxCommands {
         '#{pane_current_command}$delimiter'
         '#{cursor_x}$delimiter'
         '#{cursor_y}$delimiter'
+        '#{pane_current_path}$delimiter'
         '#{window_flags}'
         '"';
   }
