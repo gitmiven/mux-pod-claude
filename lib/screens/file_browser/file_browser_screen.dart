@@ -43,19 +43,24 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(context, state, isDark, colorScheme),
-          SliverToBoxAdapter(
-            child: PathBar(
-              currentPath: state.currentPath,
-              onPathSelected: (path) {
-                ref.read(fileBrowserProvider.notifier).navigateToDirectory(path);
-              },
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(fileBrowserProvider.notifier).refresh(),
+        color: DesignColors.primary,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            _buildAppBar(context, state, isDark, colorScheme),
+            SliverToBoxAdapter(
+              child: PathBar(
+                currentPath: state.currentPath,
+                onPathSelected: (path) {
+                  ref.read(fileBrowserProvider.notifier).navigateToDirectory(path);
+                },
+              ),
             ),
-          ),
-          _buildBody(context, state, isDark),
-        ],
+            _buildBody(context, state, isDark),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateDirectoryDialog(context),
@@ -87,12 +92,6 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
         ),
       ),
       actions: [
-        // リフレッシュ
-        IconButton(
-          icon: const Icon(Icons.refresh, size: 22),
-          onPressed: () => ref.read(fileBrowserProvider.notifier).refresh(),
-          tooltip: 'Refresh',
-        ),
         // 隠しファイルトグル
         IconButton(
           icon: Icon(
@@ -172,6 +171,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
 
     if (state.error != null) {
       return SliverFillRemaining(
+        hasScrollBody: false,
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -218,6 +218,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
 
     if (entries.isEmpty) {
       return SliverFillRemaining(
+        hasScrollBody: false,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -120,6 +120,7 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
       isLoading: true,
       error: null,
       currentPath: path,
+      entries: path != state.currentPath ? const [] : null,
     );
 
     try {
