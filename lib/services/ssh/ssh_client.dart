@@ -119,6 +119,7 @@ class SshClient {
   SSHClient? _client;
   SSHSession? _session;
   SSHSocket? _socket;
+  SftpClient? _cachedSftp;
 
   SshConnectionState _state = SshConnectionState.disconnected;
   SshEvents _events = const SshEvents();
@@ -172,15 +173,23 @@ class SshClient {
   /// 最後のエラーメッセージ
   String? get lastError => _lastError;
 
-  /// SFTPクライアントを取得
+  /// SFTPクライアントを取得（キャッシュ付き）
   ///
-  /// 接続済みの場合のみSFTPセッションを開始して返す。
-  /// 使用後は呼び出し側で close() すること。
+  /// 初回呼び出し時にSFTPセッションを開始し、以降はキャッシュを返す。
+  /// dartssh2の SftpClient.close() はSSHチャネルを解放しないため、
+  /// SSH接続のライフサイクルで1つのSftpClientを使い回す。
+  /// 呼び出し側で close() を呼んではならない。
   Future<SftpClient> openSftp() async {
     if (!isConnected || _client == null) {
       throw SshConnectionError('SFTP requires an active SSH connection');
     }
-    return await _client!.sftp();
+    if (_cachedSftp != null) {
+      debugPrint('[SshClient] openSftp: returning cached SftpClient');
+      return _cachedSftp!;
+    }
+    debugPrint('[SshClient] openSftp: creating new SftpClient');
+    _cachedSftp = await _client!.sftp();
+    return _cachedSftp!;
   }
 
   /// SSH接続を確立する
@@ -347,6 +356,10 @@ class SshClient {
   Future<void> _cleanup() async {
     // Keep-aliveを停止
     _stopKeepAlive();
+
+    // SFTPキャッシュを無効化
+    _cachedSftp?.close();
+    _cachedSftp = null;
 
     // 持続的シェルを解放
     await _persistentShell?.dispose();
