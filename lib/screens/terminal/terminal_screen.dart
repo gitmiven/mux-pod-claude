@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -3674,6 +3675,14 @@ class _InputDialogContent extends StatefulWidget {
     required this.onSend,
   });
 
+  /// Constructor exposed for widget tests only.
+  @visibleForTesting
+  const _InputDialogContent.forTesting({
+    this.initialValue = '',
+    required this.onValueChanged,
+    required this.onSend,
+  });
+
   @override
   State<_InputDialogContent> createState() => _InputDialogContentState();
 }
@@ -3683,6 +3692,11 @@ class _InputDialogContentState extends State<_InputDialogContent> {
   late final FocusNode _focusNode;
   late final ScrollController _scrollController;
   bool _isSending = false;
+
+  // IME composition tracking fields
+  DateTime? _composingEndedAt;
+  bool _wasComposing = false;
+  static const Duration _imeCommitDebounce = Duration(milliseconds: 100);
 
   @override
   void initState() {
@@ -3705,7 +3719,26 @@ class _InputDialogContentState extends State<_InputDialogContent> {
   }
 
   void _onTextChanged() {
+    final composing = _controller.value.composing;
+    final isComposingNow = composing.isValid && !composing.isCollapsed;
+    if (_wasComposing && !isComposingNow) {
+      _composingEndedAt = DateTime.now();
+    }
+    _wasComposing = isComposingNow;
+
     widget.onValueChanged(_controller.text);
+  }
+
+  /// Returns true when an IME composition is in progress or was recently committed.
+  bool get _isImeActive {
+    final composing = _controller.value.composing;
+    if (composing.isValid && !composing.isCollapsed) return true;
+    final endedAt = _composingEndedAt;
+    if (endedAt != null &&
+        DateTime.now().difference(endedAt) < _imeCommitDebounce) {
+      return true;
+    }
+    return false;
   }
 
   @override
@@ -3721,6 +3754,9 @@ class _InputDialogContentState extends State<_InputDialogContent> {
   /// キーイベントをハンドル（Shift+Enterで改行、Enterで送信）
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+      if (_isImeActive) {
+        return KeyEventResult.ignored;
+      }
       final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
       if (isShiftPressed) {
         // Shift+Enter: 改行を挿入
@@ -4408,4 +4444,20 @@ class _ResizeWindowChooserDialogState
       },
     );
   }
+}
+
+/// Factory that exposes [_InputDialogContent] for widget tests.
+///
+/// Production code must never call this function.
+@visibleForTesting
+Widget buildInputDialogContentForTesting({
+  String initialValue = '',
+  required void Function(String value) onValueChanged,
+  required Future<void> Function(String value) onSend,
+}) {
+  return _InputDialogContent.forTesting(
+    initialValue: initialValue,
+    onValueChanged: onValueChanged,
+    onSend: onSend,
+  );
 }
