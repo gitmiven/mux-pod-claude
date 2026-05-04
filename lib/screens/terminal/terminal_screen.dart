@@ -3675,14 +3675,6 @@ class _InputDialogContent extends StatefulWidget {
     required this.onSend,
   });
 
-  /// Constructor exposed for widget tests only.
-  @visibleForTesting
-  const _InputDialogContent.forTesting({
-    this.initialValue = '',
-    required this.onValueChanged,
-    required this.onSend,
-  });
-
   @override
   State<_InputDialogContent> createState() => _InputDialogContentState();
 }
@@ -4455,7 +4447,7 @@ Widget buildInputDialogContentForTesting({
   required void Function(String value) onValueChanged,
   required Future<void> Function(String value) onSend,
 }) {
-  return _InputDialogContent.forTesting(
+  return _InputDialogContent(
     initialValue: initialValue,
     onValueChanged: onValueChanged,
     onSend: onSend,
