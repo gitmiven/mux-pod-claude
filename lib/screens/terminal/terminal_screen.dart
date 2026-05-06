@@ -3688,7 +3688,7 @@ class _InputDialogContentState extends State<_InputDialogContent> {
   // IME composition tracking fields
   DateTime? _composingEndedAt;
   bool _wasComposing = false;
-  static const Duration _imeCommitDebounce = Duration(milliseconds: 100);
+  static const Duration _imeCommitDebounce = Duration(milliseconds: 150);
 
   @override
   void initState() {
