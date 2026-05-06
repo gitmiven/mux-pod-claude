@@ -35,6 +35,21 @@ Connection _makeConnection({
   );
 }
 
+/// Triggers the provider (causing build() to fire) and then drains the
+/// event queue so that _loadConnections() runs to completion.
+///
+/// build() returns ConnectionsState(isLoading: true) synchronously and
+/// fires _loadConnections() as a side-effect.  _loadConnections() contains
+/// multiple await points (SharedPreferences.getInstance, prefs.getString,
+/// etc.), so we must pump the full event queue *after* the provider has
+/// been activated to ensure the loading flag is cleared before assertions.
+Future<void> _activateAndLoad(ProviderContainer container) async {
+  // Touch the provider so build() is called and _loadConnections() starts.
+  container.read(connectionsProvider);
+  // Drain all pending microtasks / timer callbacks.
+  await pumpEventQueue();
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -53,27 +68,30 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      // Let the initial async load settle.
-      await Future<void>.delayed(Duration.zero);
+      // Activate the provider then flush async I/O so _loadConnections()
+      // completes and sets isLoading to false.
+      await _activateAndLoad(container);
 
       final state = container.read(connectionsProvider);
+      // After load with empty SharedPreferences the list must be empty and
+      // the loading flag must be cleared.
       expect(state.connections, isEmpty);
       expect(state.isLoading, isFalse);
     });
 
-    test('add() synchronously updates state before save completes', () async {
+    test('add() updates state before the caller observes the result', () async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      // Wait for initial load.
-      await Future<void>.delayed(Duration.zero);
+      await _activateAndLoad(container);
 
       final notifier = container.read(connectionsProvider.notifier);
       final conn = _makeConnection();
 
-      // Do NOT await — we want to check the synchronous state update.
-      // ignore: unawaited_futures
-      notifier.add(conn);
+      // add() sets state synchronously (before awaiting _saveConnections),
+      // so by the time the returned Future resolves the state is already
+      // visible to any reader.
+      await notifier.add(conn);
 
       final state = container.read(connectionsProvider);
       expect(state.connections, hasLength(1));
@@ -85,7 +103,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      await Future<void>.delayed(Duration.zero);
+      await _activateAndLoad(container);
 
       // Subscribe a listener that records build counts.
       int buildCount = 0;
@@ -109,7 +127,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      await Future<void>.delayed(Duration.zero);
+      await _activateAndLoad(container);
 
       final notifier = container.read(connectionsProvider.notifier);
       await notifier.add(_makeConnection(id: 'c1', name: 'Server A'));
@@ -127,7 +145,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      await Future<void>.delayed(Duration.zero);
+      await _activateAndLoad(container);
 
       final notifier = container.read(connectionsProvider.notifier);
 
@@ -148,7 +166,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      await Future<void>.delayed(Duration.zero);
+      await _activateAndLoad(container);
 
       final notifier = container.read(connectionsProvider.notifier);
       await notifier.add(_makeConnection(id: 'c1', name: 'Before'));
@@ -171,7 +189,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      await Future<void>.delayed(Duration.zero);
+      await _activateAndLoad(container);
 
       final notifier = container.read(connectionsProvider.notifier);
       await notifier.add(_makeConnection(id: 'c1', name: 'A'));
@@ -195,7 +213,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      await Future<void>.delayed(Duration.zero);
+      await _activateAndLoad(container);
 
       final notifier = container.read(connectionsProvider.notifier);
 
@@ -214,7 +232,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      await Future<void>.delayed(Duration.zero);
+      await _activateAndLoad(container);
 
       final notifier = container.read(connectionsProvider.notifier);
       await notifier.add(_makeConnection(id: 'c1', name: 'Before'));
