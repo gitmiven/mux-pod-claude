@@ -3669,11 +3669,15 @@ class _InputDialogContent extends StatefulWidget {
   final void Function(String value) onValueChanged;
   final Future<void> Function(String value) onSend;
 
+  /// Overridable clock; defaults to [DateTime.now]. Tests inject a fake.
+  final DateTime Function() nowProvider;
+
   const _InputDialogContent({
     this.initialValue = '',
     required this.onValueChanged,
     required this.onSend,
-  });
+    DateTime Function()? nowProvider,
+  }) : nowProvider = nowProvider ?? DateTime.now;
 
   @override
   State<_InputDialogContent> createState() => _InputDialogContentState();
@@ -3724,7 +3728,7 @@ class _InputDialogContentState extends State<_InputDialogContent> {
     final composing = _controller.value.composing;
     final isComposingNow = composing.isValid && !composing.isCollapsed;
     if (_wasComposing && !isComposingNow) {
-      _composingEndedAt = DateTime.now();
+      _composingEndedAt = widget.nowProvider();
     }
     _wasComposing = isComposingNow;
 
@@ -3737,7 +3741,7 @@ class _InputDialogContentState extends State<_InputDialogContent> {
     if (composing.isValid && !composing.isCollapsed) return true;
     final endedAt = _composingEndedAt;
     if (endedAt != null &&
-        DateTime.now().difference(endedAt) < _imeCommitDebounce) {
+        widget.nowProvider().difference(endedAt) < _imeCommitDebounce) {
       return true;
     }
     return false;
@@ -4457,10 +4461,12 @@ Widget buildInputDialogContentForTesting({
   String initialValue = '',
   required void Function(String value) onValueChanged,
   required Future<void> Function(String value) onSend,
+  DateTime Function()? nowProvider,
 }) {
   return _InputDialogContent(
     initialValue: initialValue,
     onValueChanged: onValueChanged,
     onSend: onSend,
+    nowProvider: nowProvider,
   );
 }
