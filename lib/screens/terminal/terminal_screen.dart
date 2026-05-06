@@ -3698,6 +3698,8 @@ class _InputDialogContentState extends State<_InputDialogContent> {
     _scrollController = ScrollController();
     // キーイベントをハンドルするためにonKeyEventを設定
     _focusNode.onKeyEvent = _handleKeyEvent;
+    // Reset composing state when focus is lost to avoid stale debounce.
+    _focusNode.addListener(_onFocusChanged);
     // テキスト変更時に親へ通知
     _controller.addListener(_onTextChanged);
     // 自動フォーカス（カーソルを末尾に）
@@ -3708,6 +3710,14 @@ class _InputDialogContentState extends State<_InputDialogContent> {
         offset: _controller.text.length,
       );
     });
+  }
+
+  void _onFocusChanged() {
+    if (!_focusNode.hasFocus) {
+      // Discard stale composing state when focus moves away.
+      _composingEndedAt = null;
+      _wasComposing = false;
+    }
   }
 
   void _onTextChanged() {
@@ -3736,6 +3746,7 @@ class _InputDialogContentState extends State<_InputDialogContent> {
   @override
   void dispose() {
     _controller.removeListener(_onTextChanged);
+    _focusNode.removeListener(_onFocusChanged);
     _focusNode.onKeyEvent = null;
     _focusNode.dispose();
     _controller.dispose();
