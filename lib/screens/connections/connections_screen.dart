@@ -411,7 +411,7 @@ class ConnectionsScreen extends ConsumerWidget {
 
   void _addConnection(BuildContext context, WidgetRef ref) async {
     developer.log('_addConnection() - navigating to ConnectionFormScreen', name: 'ConnectionsScreen');
-    await Navigator.of(context).push<bool>(
+    await Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const ConnectionFormScreen()),
     );
     developer.log('_addConnection() - returned', name: 'ConnectionsScreen');
@@ -421,7 +421,7 @@ class ConnectionsScreen extends ConsumerWidget {
 
   void _editConnection(BuildContext context, WidgetRef ref, Connection connection) async {
     developer.log('_editConnection() - navigating to ConnectionFormScreen for ${connection.id}', name: 'ConnectionsScreen');
-    await Navigator.of(context).push<bool>(
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ConnectionFormScreen(connectionId: connection.id),
       ),
