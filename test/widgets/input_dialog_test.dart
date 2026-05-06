@@ -86,7 +86,7 @@ void main() {
     });
 
     testWidgets(
-        'Enter within 80 ms after composing collapses does not call onSend',
+        'Enter at 50 ms after composing collapses does not call onSend',
         (tester) async {
       int sendCount = 0;
       await tester.pumpWidget(_buildWidget(
@@ -114,8 +114,9 @@ void main() {
       );
       await tester.pump();
 
-      // Press Enter almost immediately (< 80 ms wall-clock).
-      // The debounce window is 100 ms so this should still be blocked.
+      // Advance virtual time by 50 ms — still inside the 150 ms debounce window.
+      await tester.pump(const Duration(milliseconds: 50));
+
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump();
 
@@ -123,7 +124,7 @@ void main() {
     });
 
     testWidgets(
-        'Enter more than 150 ms after composing collapses calls onSend once',
+        'Enter at 200 ms after composing collapses calls onSend once',
         (tester) async {
       int sendCount = 0;
       await tester.pumpWidget(_buildWidget(
@@ -151,9 +152,8 @@ void main() {
       );
       await tester.pump();
 
-      // Wait 150 ms of real time so the debounce window expires.
-      await Future<void>.delayed(const Duration(milliseconds: 150));
-      await tester.pump();
+      // Advance virtual time by 200 ms — past the 150 ms debounce window.
+      await tester.pump(const Duration(milliseconds: 200));
 
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump();
