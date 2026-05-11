@@ -3669,15 +3669,11 @@ class _InputDialogContent extends StatefulWidget {
   final void Function(String value) onValueChanged;
   final Future<void> Function(String value) onSend;
 
-  /// Overridable clock; defaults to [DateTime.now]. Tests inject a fake.
-  final DateTime Function() nowProvider;
-
   const _InputDialogContent({
     this.initialValue = '',
     required this.onValueChanged,
     required this.onSend,
-    DateTime Function()? nowProvider,
-  }) : nowProvider = nowProvider ?? DateTime.now;
+  });
 
   @override
   State<_InputDialogContent> createState() => _InputDialogContentState();
@@ -3689,11 +3685,6 @@ class _InputDialogContentState extends State<_InputDialogContent> {
   late final ScrollController _scrollController;
   bool _isSending = false;
 
-  // IME composition tracking fields
-  DateTime? _composingEndedAt;
-  bool _wasComposing = false;
-  static const Duration _imeCommitDebounce = Duration(milliseconds: 150);
-
   @override
   void initState() {
     super.initState();
@@ -3702,8 +3693,6 @@ class _InputDialogContentState extends State<_InputDialogContent> {
     _scrollController = ScrollController();
     // キーイベントをハンドルするためにonKeyEventを設定
     _focusNode.onKeyEvent = _handleKeyEvent;
-    // Reset composing state when focus is lost to avoid stale debounce.
-    _focusNode.addListener(_onFocusChanged);
     // テキスト変更時に親へ通知
     _controller.addListener(_onTextChanged);
     // 自動フォーカス（カーソルを末尾に）
@@ -3716,41 +3705,19 @@ class _InputDialogContentState extends State<_InputDialogContent> {
     });
   }
 
-  void _onFocusChanged() {
-    if (!_focusNode.hasFocus) {
-      // Discard stale composing state when focus moves away.
-      _composingEndedAt = null;
-      _wasComposing = false;
-    }
-  }
-
   void _onTextChanged() {
-    final composing = _controller.value.composing;
-    final isComposingNow = composing.isValid && !composing.isCollapsed;
-    if (_wasComposing && !isComposingNow) {
-      _composingEndedAt = widget.nowProvider();
-    }
-    _wasComposing = isComposingNow;
-
     widget.onValueChanged(_controller.text);
   }
 
-  /// Returns true when an IME composition is in progress or was recently committed.
+  /// Returns true when an IME composition range is open.
   bool get _isImeActive {
     final composing = _controller.value.composing;
-    if (composing.isValid && !composing.isCollapsed) return true;
-    final endedAt = _composingEndedAt;
-    if (endedAt != null &&
-        widget.nowProvider().difference(endedAt) < _imeCommitDebounce) {
-      return true;
-    }
-    return false;
+    return composing.isValid && !composing.isCollapsed;
   }
 
   @override
   void dispose() {
     _controller.removeListener(_onTextChanged);
-    _focusNode.removeListener(_onFocusChanged);
     _focusNode.onKeyEvent = null;
     _focusNode.dispose();
     _controller.dispose();
@@ -4461,12 +4428,10 @@ Widget buildInputDialogContentForTesting({
   String initialValue = '',
   required void Function(String value) onValueChanged,
   required Future<void> Function(String value) onSend,
-  DateTime Function()? nowProvider,
 }) {
   return _InputDialogContent(
     initialValue: initialValue,
     onValueChanged: onValueChanged,
     onSend: onSend,
-    nowProvider: nowProvider,
   );
 }
