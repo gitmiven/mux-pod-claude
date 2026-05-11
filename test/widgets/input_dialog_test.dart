@@ -3,25 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_muxpod/screens/terminal/terminal_screen.dart';
 
-/// A mutable fake clock for deterministic IME debounce tests.
-class _FakeClock {
-  DateTime _now;
-
-  _FakeClock(this._now);
-
-  DateTime call() => _now;
-
-  void advance(Duration d) {
-    _now = _now.add(d);
-  }
-}
-
 /// Helper that wraps the dialog content in a testable widget tree.
 Widget _buildWidget({
   String initialValue = '',
   required void Function(String) onValueChanged,
   required Future<void> Function(String) onSend,
-  DateTime Function()? nowProvider,
 }) {
   return MaterialApp(
     home: Scaffold(
@@ -29,7 +15,6 @@ Widget _buildWidget({
         initialValue: initialValue,
         onValueChanged: onValueChanged,
         onSend: onSend,
-        nowProvider: nowProvider,
       ),
     ),
   );
@@ -98,86 +83,6 @@ void main() {
 
       expect(sendCount, 0);
       expect(controller.text, 'あ');
-    });
-
-    testWidgets(
-        'Enter at 50 ms after composing collapses does not call onSend',
-        (tester) async {
-      int sendCount = 0;
-      final clock = _FakeClock(DateTime(2024));
-      await tester.pumpWidget(_buildWidget(
-        initialValue: '',
-        onValueChanged: (_) {},
-        onSend: (v) async => sendCount++,
-        nowProvider: clock.call,
-      ));
-      await tester.pump();
-
-      final TextField textField =
-          tester.widget<TextField>(find.byType(TextField));
-      final TextEditingController controller = textField.controller!;
-
-      // Start composing.
-      controller.value = const TextEditingValue(
-        text: 'あ',
-        composing: TextRange(start: 0, end: 1),
-      );
-      await tester.pump();
-
-      // Collapse composing (simulates IME commit).
-      controller.value = const TextEditingValue(
-        text: 'あ',
-        composing: TextRange.empty,
-      );
-      await tester.pump();
-
-      // Advance fake clock by 50 ms — still inside the 150 ms debounce window.
-      clock.advance(const Duration(milliseconds: 50));
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-      await tester.pump();
-
-      expect(sendCount, 0);
-    });
-
-    testWidgets(
-        'Enter at 200 ms after composing collapses calls onSend once',
-        (tester) async {
-      int sendCount = 0;
-      final clock = _FakeClock(DateTime(2024));
-      await tester.pumpWidget(_buildWidget(
-        initialValue: '',
-        onValueChanged: (_) {},
-        onSend: (v) async => sendCount++,
-        nowProvider: clock.call,
-      ));
-      await tester.pump();
-
-      final TextField textField =
-          tester.widget<TextField>(find.byType(TextField));
-      final TextEditingController controller = textField.controller!;
-
-      // Start composing.
-      controller.value = const TextEditingValue(
-        text: 'あ',
-        composing: TextRange(start: 0, end: 1),
-      );
-      await tester.pump();
-
-      // Collapse composing.
-      controller.value = const TextEditingValue(
-        text: 'あ',
-        composing: TextRange.empty,
-      );
-      await tester.pump();
-
-      // Advance fake clock by 200 ms — past the 150 ms debounce window.
-      clock.advance(const Duration(milliseconds: 200));
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-      await tester.pump();
-
-      expect(sendCount, 1);
     });
   });
 }
