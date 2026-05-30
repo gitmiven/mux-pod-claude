@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
 
+import '../shell/shell_escape.dart';
+
 /// tmuxコマンド生成サービス
 ///
 /// tmuxコマンドを生成するユーティリティクラス。
@@ -388,20 +390,9 @@ class TmuxCommands {
   // ===== ユーティリティ =====
 
   /// 引数をエスケープ
-  static String _escapeArg(String arg) {
-    // シェルの特殊文字をエスケープ
-    // 特殊文字: スペース、クォート、バックスラッシュ、変数展開、バッククォート、その他
-    if (arg.contains(RegExp(r'[\s"' "'" r'\\$`!{}\[\]<>|&;()]'))) {
-      // ダブルクォートでラップし、内部の特殊文字をエスケープ
-      final escaped = arg
-          .replaceAll(r'\', r'\\')
-          .replaceAll('"', r'\"')
-          .replaceAll(r'$', r'\$')
-          .replaceAll('`', r'\`');
-      return '"$escaped"';
-    }
-    return arg;
-  }
+  ///
+  /// コマンドインジェクション対策の唯一の共有機構 [ShellEscape] に委譲する（FR-013）。
+  static String _escapeArg(String arg) => ShellEscape.quote(arg);
 
   /// 複数のコマンドを連結
   static String chain(List<String> commands) {

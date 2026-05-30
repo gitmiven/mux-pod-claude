@@ -323,6 +323,41 @@ void main() {
     });
   });
 
+  group('command-injection prevention (FR-011/012)', () {
+    test('session name with semicolon is quoted, not chained', () {
+      final cmd = TmuxCommands.killSession('report;backup');
+      expect(cmd, 'tmux kill-session -t "report;backup"');
+      // The dangerous ";" lives inside the quotes — not a command separator.
+      expect(cmd, isNot(endsWith('backup')));
+    });
+
+    test('window rename with command substitution is escaped', () {
+      final cmd = TmuxCommands.renameWindow('sess', 0, r'$(id)');
+      expect(cmd, r'tmux rename-window -t sess:0 "\$(id)"');
+    });
+
+    test('new session name with backticks is escaped', () {
+      final cmd = TmuxCommands.newSession(name: '`reboot`');
+      expect(cmd, contains(r'\`reboot\`'));
+      expect(cmd, isNot(contains('`reboot`')));
+    });
+
+    test('has-session with pipe is quoted', () {
+      final cmd = TmuxCommands.hasSession('a|b');
+      expect(cmd, contains('"a|b"'));
+    });
+
+    test('send-keys target with newline is quoted literally', () {
+      final cmd = TmuxCommands.sendKeys('a\nb', 'Enter');
+      expect(cmd, contains('"a\nb"'));
+    });
+
+    test('select-pane with dollar variable expansion is escaped', () {
+      final cmd = TmuxCommands.selectPane(r'$HOME');
+      expect(cmd, r'tmux select-pane -t "\$HOME"');
+    });
+  });
+
   group('SplitDirection', () {
     test('has horizontal and vertical values', () {
       expect(SplitDirection.values, contains(SplitDirection.horizontal));

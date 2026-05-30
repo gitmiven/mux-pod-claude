@@ -1,72 +1,72 @@
 # MuxPod
 
-AndroidスマートフォンからSSH経由でリモートサーバーのtmuxセッション・ウィンドウ・ペインを閲覧・操作するFlutterアプリ。
+A Flutter app for browsing and operating tmux sessions, windows, and panes on a remote server over SSH, from an Android smartphone. Optimized for Claude Code.
 
-## 主要機能
+## Key Features
 
-- SSH直接接続（サーバー側はsshdのみで動作）
-- tmuxセッション/ウィンドウ/ペインのナビゲーション
-- ANSIカラー対応ターミナル表示
-- 特殊キー入力（ESC/CTRL/ALT等）
-- 通知ルール（パターンマッチで通知）
-- SSH鍵管理（flutter_secure_storage対応）
-- ディープリンク（muxpod:// URLスキームで外部アプリから直接遷移）
-- 折りたたみデバイス対応
+- Direct SSH connection (the server only needs sshd running)
+- Navigation of tmux sessions / windows / panes
+- ANSI color-capable terminal display
+- Special key input (ESC / CTRL / ALT, etc.)
+- Notification rules (notify on pattern match)
+- SSH key management (flutter_secure_storage support)
+- Deep links (jump directly from external apps via the muxpod:// URL scheme)
+- Foldable device support
 
-## 技術スタック
+## Tech Stack
 
 - Flutter 3.24+ / Dart 3.x
-- flutter_riverpod (状態管理)
-- dartssh2 (SSH接続)
-- xterm (ターミナル表示)
-- flutter_secure_storage (セキュアストレージ)
-- shared_preferences (設定保存)
+- flutter_riverpod (state management)
+- dartssh2 (SSH connection)
+- xterm (terminal display)
+- flutter_secure_storage (secure storage)
+- shared_preferences (settings persistence)
 
-## 開発コマンド
+## Development Commands
 
 ```bash
-flutter run             # 開発実行
-flutter run -d android  # Android実機/エミュレータ
-flutter analyze         # 静的解析
-flutter test            # テスト実行
-flutter build apk       # APKビルド
+flutter run             # Run in development
+flutter run -d android  # Android device/emulator
+flutter analyze         # Static analysis
+flutter test            # Run tests
+flutter build apk       # Build APK
 ```
 
-## ドキュメント
+## Documentation
 
-- @/docs/tmux-mobile-design-v2.md - 詳細設計書
-- @/docs/coding-conventions.md - コーディング規約
-- @/docs/ui-guidelines.md - UI/UXガイドライン
-- @/docs/screens/ - 画面デザイン
-- @/docs/logo/logo.svg - ロゴ
+- @/docs/tmux-mobile-design-v2.md - Detailed design document
+- @/docs/coding-conventions.md - Coding conventions
+- @/docs/ui-guidelines.md - UI/UX guidelines
+- @/docs/screens/ - Screen designs
+- @/docs/logo/logo.svg - Logo
 
-## ディレクトリ構成
+## Directory Structure
 
 ```
 muxpod/
 ├── lib/
-│   ├── main.dart           # エントリーポイント
+│   ├── main.dart           # Entry point
 │   ├── providers/          # Riverpod providers
-│   ├── screens/            # 画面
-│   │   ├── connections/    # 接続管理
-│   │   ├── terminal/       # ターミナル
-│   │   ├── keys/           # SSH鍵管理
-│   │   ├── notifications/  # 通知ルール
-│   │   └── settings/       # 設定
-│   ├── services/           # ビジネスロジック
-│   │   ├── ssh/            # SSH接続
-│   │   ├── tmux/           # tmux操作
-│   │   ├── terminal/       # ターミナル制御
-│   │   ├── keychain/       # 鍵管理
-│   │   └── notification/   # 通知エンジン
-│   ├── theme/              # テーマ・デザイン
-│   └── widgets/            # 共通ウィジェット
-├── android/                # Androidネイティブ設定
-├── ios/                    # iOSネイティブ設定
-└── test/                   # テスト
+│   ├── screens/            # Screens
+│   │   ├── connections/    # Connection management
+│   │   ├── terminal/       # Terminal
+│   │   ├── keys/           # SSH key management
+│   │   ├── notifications/  # Notification rules
+│   │   └── settings/       # Settings
+│   ├── services/           # Business logic
+│   │   ├── ssh/            # SSH connection
+│   │   ├── tmux/           # tmux operations
+│   │   ├── terminal/       # Terminal control
+│   │   ├── keychain/       # Key management
+│   │   └── notification/   # Notification engine
+│   ├── theme/              # Theme / design
+│   └── widgets/            # Shared widgets
+├── android/                # Android native config
+├── ios/                    # iOS native config
+└── test/                   # Tests
 ```
 
-## 主要な型
+## Core Types
 
 ```dart
 class Connection {
@@ -96,20 +96,95 @@ class TmuxPane {
 }
 ```
 
-## セキュリティ
+## Security
 
-- SSH鍵: flutter_secure_storage（暗号化）
-- パスワード: flutter_secure_storage（暗号化）
-- 生体認証対応（local_auth）
+- SSH keys: flutter_secure_storage (encrypted)
+- Passwords: flutter_secure_storage (encrypted)
+- Biometric authentication support (local_auth)
 
 ## Active Technologies
-- Dart 3.10+ / Flutter 3.24+ + dartssh2 (SSH), xterm (ターミナル表示), flutter_riverpod (状態管理)
-- flutter_secure_storage (SSH鍵/パスワード), shared_preferences (接続設定)
-- cryptography, pointycastle (SSH鍵生成)
-- flutter_local_notifications, url_launcher (設定/通知)
-- Dart 3.x / Flutter 3.24+ + flutter_riverpod (状態管理), xterm (ターミナル表示), dartssh2 (SSH接続) (001-terminal-width-resize)
+
+- Dart 3.10+ / Flutter 3.24+ + dartssh2 (SSH), xterm (terminal display), flutter_riverpod (state management)
+- flutter_secure_storage (SSH keys/passwords), shared_preferences (connection settings)
+- cryptography, pointycastle (SSH key generation)
+- flutter_local_notifications, url_launcher (settings/notifications)
+- Dart 3.x / Flutter 3.24+ + flutter_riverpod (state management), xterm (terminal display), dartssh2 (SSH connection) (001-terminal-width-resize)
 
 ## Recent Changes
-- 001-ssh-terminal-integration: SSH接続・tmuxアタッチ・キー送信の実装
-- 003-ssh-key-management: Ed25519/RSA鍵生成・インポート・管理機能
-- 001-settings-notifications: 設定画面・通知ルールCRUD・テーマ切替
+
+- 004-ssh-security-hardening: SSH host-key verification (TOFU via dartssh2 `onVerifyHostKey`, stored per `host:port` in `lib/services/ssh/trusted_host_store.dart`, fail-closed mismatch with re-trust/forget UI) and centralized command-injection escaping (`lib/services/shell/shell_escape.dart`, used by `TmuxCommands` and the tmux-path checks)
+- 001-ssh-terminal-integration: Implemented SSH connection, tmux attach, and key sending
+- 003-ssh-key-management: Ed25519/RSA key generation, import, and management features
+- 001-settings-notifications: Settings screen, notification rule CRUD, theme switching
+
+---
+
+## Fleet Commander — Decision Protocol
+
+This workspace is registered with the Fleet Commander hub as `mux-pod-claude`. When you are blocked, need a decision, or are about to make a significant architectural choice:
+
+**STOP. Do not ask a question in chat. Generate a DECISION_MEMO instead.**
+
+### Session Kickstart
+
+At the start of each session, before acting on the user's first instruction:
+
+1. Read `progress.md`. If it doesn't exist, run `/progress` to bootstrap it from the project structure, then re-read.
+2. Identify the **active phase** — the lowest-numbered phase that is not at 100% (`✅`).
+3. From `README.md` and the active phase's name, identify the next unfinished item in that phase.
+4. State in one line what you're about to resume: `Resuming phase {N} — {phase name}. Next: {specific task}.`
+5. Then wait for the user to confirm, redirect, or give the green light before starting work.
+
+If `progress.md` is empty, contradicts the visible project state, or there is no obvious next item — that's a DECISION_MEMO trigger. Do NOT silently guess.
+
+### Format
+
+```
+DECISION_MEMO
+=============
+Current state: <one sentence — what was just completed>
+Blocker: <one sentence — what is preventing progress>
+
+Options:
+1. <action> — Pro: <benefit> | Con: <risk>
+2. <action> — Pro: <benefit> | Con: <risk>
+3. <action> — Pro: <benefit> | Con: <risk>
+```
+
+### Trigger conditions
+
+- A test fails and you have tried at least one fix
+- An ambiguity in requirements could lead to two meaningfully different implementations
+- You need a secret, credential, or environment value you don't have
+- You are about to delete or overwrite existing logic and are unsure
+- You have completed a unit of work and the next step is unclear
+
+### How to send
+
+```python
+import sys
+sys.path.insert(0, "agent")
+from hook import FleetCommander
+
+fc = FleetCommander()  # reads FLEET_HUB_URL / FLEET_API_KEY / FLEET_PROJECT_ID from env
+option, note = fc.ask_commander(
+    issue="<blocker in one sentence>",
+    context="<relevant logs, file excerpts, traceback>",
+    options=[
+        "<option 1>",
+        "<option 2>",
+        "<option 3>",
+    ],
+)
+```
+
+`ask_commander()` blocks until the commander resolves the memo (instant via webhook, with poll fallback). Do NOT continue coding until you receive a response. If you fix the blocker yourself before getting an answer, call `fc.cancel(decision_id)`.
+
+### What NOT to memo
+
+- Formatting choices, variable names, minor style decisions — use your best judgement
+- Errors you are confident you can fix — try first, memo only if stuck after 2 attempts
+
+### Env wiring
+
+Hook env vars (`FLEET_HUB_URL`, `FLEET_API_KEY`, `FLEET_PROJECT_ID`) live in `.env` and must be **exported** into the shell running Claude. Use `bash start-dev.sh` from this directory — it launches tmux sessions with the vars wired in. If the vars aren't exported, `hook.py` falls back to bad defaults and memos go nowhere silently.

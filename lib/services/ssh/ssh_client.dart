@@ -6,6 +6,8 @@ import 'dart:typed_data';
 
 import 'package:dartssh2/dartssh2.dart';
 
+import '../shell/shell_escape.dart';
+import 'host_key_verifier.dart';
 import 'persistent_shell.dart';
 
 /// SSH接続エラー
@@ -203,6 +205,7 @@ class SshClient {
     required int port,
     required String username,
     required SshConnectOptions options,
+    HostKeyVerifier? hostKeyVerifier,
   }) async {
     // バリデーション
     _validateConnectionParams(host, port, username, options);
@@ -218,6 +221,9 @@ class SshClient {
         timeout: Duration(seconds: options.timeout),
       );
 
+      // ホスト鍵検証コールバック（TOFU）。verifier 未指定時は従来どおり受理（後方互換）。
+      final onVerifyHostKey = hostKeyVerifier?.verify;
+
       // 認証方式に応じたクライアント作成
       if (options.privateKey != null) {
         // 鍵認証
@@ -225,6 +231,7 @@ class SshClient {
           _socket!,
           username: username,
           identities: _parsePrivateKey(options.privateKey!, options.passphrase),
+          onVerifyHostKey: onVerifyHostKey,
           onAuthenticated: _onAuthenticated,
         );
       } else if (options.password != null) {
@@ -233,6 +240,7 @@ class SshClient {
           _socket!,
           username: username,
           onPasswordRequest: () => options.password!,
+          onVerifyHostKey: onVerifyHostKey,
           onAuthenticated: _onAuthenticated,
         );
       } else {
@@ -242,6 +250,9 @@ class SshClient {
       // 認証完了を待機
       await _client!.authenticated;
 
+      // 認証成功後に信頼を永続化（初回信頼/再信頼のコミット・lastVerifiedAt更新）。
+      await hostKeyVerifier?.commit();
+
       _state = SshConnectionState.connected;
       _connectionStateController.add(_state);
 
@@ -249,7 +260,9 @@ class SshClient {
       if (options.tmuxPath != null && options.tmuxPath!.isNotEmpty) {
         // ユーザー指定パスの存在確認
         final verifyExitCode = await _withExecLock(() async {
-          final session = await _client!.execute('test -x ${options.tmuxPath}');
+          // ユーザー指定パスはリテラルデータとして扱う（コマンドインジェクション対策・FR-011）
+          final session = await _client!
+              .execute('test -x ${ShellEscape.quote(options.tmuxPath!)}');
           await session.stdout.drain();
           await session.stderr.drain();
           final code = session.exitCode;
@@ -282,6 +295,15 @@ class SshClient {
       await _cleanup();
       throw SshAuthenticationError(_lastError!, e);
     } catch (e) {
+      // ホスト鍵不一致でハンドシェイクが中断された場合は型付き例外を送出（FR-004）。
+      // フィンガープリント以外の秘密情報は一切含めない（FR-015）。
+      final mismatch = hostKeyVerifier?.pendingMismatch;
+      if (mismatch != null) {
+        _state = SshConnectionState.error;
+        _lastError = 'Host identity changed';
+        await _cleanup();
+        throw mismatch;
+      }
       _state = SshConnectionState.error;
       _lastError = 'Connection failed: $e';
       await _cleanup();
@@ -485,9 +507,11 @@ class SshClient {
       debugPrint('_resolveTmuxCommand: _tmuxPath=null, command unchanged');
       return command;
     }
+    // 検出/指定された絶対パスはリテラルデータとして安全にエンコードする（FR-011）。
+    final safePath = ShellEscape.quote(_tmuxPath!);
     final resolved = command.replaceAllMapped(
       RegExp(r'(^|;\s*)tmux\b'),
-      (m) => '${m[1]}$_tmuxPath',
+      (m) => '${m[1]}$safePath',
     );
     if (resolved != command) {
       debugPrint('_resolveTmuxCommand: "$command" => "$resolved"');
