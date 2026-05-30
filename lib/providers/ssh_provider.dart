@@ -4,8 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/background/foreground_task_service.dart';
 import '../services/network/network_monitor.dart';
+import '../services/ssh/host_key_verifier.dart';
 import '../services/ssh/ssh_client.dart';
+import '../services/ssh/trusted_host_identity.dart';
+import '../services/ssh/trusted_host_store.dart';
 import 'connection_provider.dart';
+
+/// 信頼済みホスト識別子ストア（TOFU）。UI と SshNotifier で共有する。
+final trustedHostStoreProvider = Provider<TrustedHostStore>(
+  (ref) => SharedPrefsTrustedHostStore(),
+);
 
 /// SSH接続状態
 class SshState {
@@ -25,6 +33,10 @@ class SshState {
   /// 再接続が一時停止中か（ネットワーク不可時）
   final bool isPaused;
 
+  /// ホスト鍵不一致を検知した場合の情報（TOFU・FR-004）。null なら未検知。
+  /// 設定されている間は自動再接続を停止し、ユーザーの中止/再信頼を待つ。
+  final SshHostKeyChangedError? hostKeyChange;
+
   const SshState({
     this.connectionState = SshConnectionState.disconnected,
     this.error,
@@ -35,6 +47,7 @@ class SshState {
     this.isNetworkAvailable = true,
     this.nextRetryAt,
     this.isPaused = false,
+    this.hostKeyChange,
   });
 
   SshState copyWith({
@@ -47,6 +60,8 @@ class SshState {
     bool? isNetworkAvailable,
     DateTime? nextRetryAt,
     bool? isPaused,
+    SshHostKeyChangedError? hostKeyChange,
+    bool clearHostKeyChange = false,
   }) {
     return SshState(
       connectionState: connectionState ?? this.connectionState,
@@ -58,6 +73,8 @@ class SshState {
       isNetworkAvailable: isNetworkAvailable ?? this.isNetworkAvailable,
       nextRetryAt: nextRetryAt,
       isPaused: isPaused ?? this.isPaused,
+      hostKeyChange:
+          clearHostKeyChange ? null : (hostKeyChange ?? this.hostKeyChange),
     );
   }
 
@@ -173,6 +190,59 @@ class SshNotifier extends Notifier<SshState> {
   /// 最後の接続オプション
   SshConnectOptions? get lastOptions => _lastOptions;
 
+  /// 次回接続で変化したホスト鍵を一度だけ再信頼するフラグ（ユーザーの明示的再信頼後）。
+  bool _trustNextHostKey = false;
+
+  /// このエンドポイント用のホスト鍵検証器を生成（TOFU）。
+  /// 直前にユーザーが再信頼を選んでいれば、その1回だけ新しい鍵を信頼する（FR-005）。
+  HostKeyVerifier _buildVerifier(Connection connection) {
+    final trustNew = _trustNextHostKey;
+    _trustNextHostKey = false;
+    return HostKeyVerifier(
+      store: ref.read(trustedHostStoreProvider),
+      host: connection.host,
+      port: connection.port,
+      trustNewHostKey: trustNew,
+    );
+  }
+
+  /// ホスト鍵不一致を状態に反映し、自動再接続を停止する（ループ防止・FR-007）。
+  void _handleHostKeyChange(SshHostKeyChangedError e) {
+    _reconnectTimer?.cancel();
+    _client?.dispose();
+    _client = null;
+    state = state.copyWith(
+      connectionState: SshConnectionState.error,
+      error: 'Host identity changed',
+      isReconnecting: false,
+      isPaused: false,
+      hostKeyChange: e,
+    );
+  }
+
+  /// ホスト鍵不一致の警告をクリアする（ユーザーが中止を選んだとき）。
+  void clearHostKeyChange() {
+    state = state.copyWith(clearHostKeyChange: true);
+  }
+
+  /// 指定エンドポイントの信頼済みホスト識別子を取得（UI表示用・FR-008）。
+  Future<TrustedHostIdentity?> getTrustedHostIdentity(String host, int port) {
+    return ref.read(trustedHostStoreProvider).get(host, port);
+  }
+
+  /// 指定エンドポイントの信頼を忘れる（次回接続は初回扱い・FR-009）。
+  Future<void> forgetHostKey(String host, int port) {
+    return ref.read(trustedHostStoreProvider).remove(host, port);
+  }
+
+  /// 次回接続で変化したホスト鍵を明示的に再信頼するよう指示し、警告をクリアする（FR-005）。
+  ///
+  /// 呼び出し側は続けて通常の接続/再接続フローを再実行する（フル・セットアップを伴う）。
+  void retrustNextConnect() {
+    _trustNextHostKey = true;
+    state = state.copyWith(clearHostKeyChange: true);
+  }
+
   /// SSH接続を確立（シェル付き - 従来方式）
   Future<void> connect(Connection connection, SshConnectOptions options) async {
     state = state.copyWith(
@@ -188,6 +258,7 @@ class SshNotifier extends Notifier<SshState> {
         port: connection.port,
         username: connection.username,
         options: options,
+        hostKeyVerifier: _buildVerifier(connection),
       );
 
       await _client!.startShell();
@@ -204,6 +275,9 @@ class SshNotifier extends Notifier<SshState> {
         connectionName: connection.name,
         host: connection.host,
       );
+    } on SshHostKeyChangedError catch (e) {
+      // ホスト鍵不一致: 警告状態に遷移し自動再接続しない（FR-004/007）。
+      _handleHostKeyChange(e);
     } on SshConnectionError catch (e) {
       state = state.copyWith(
         connectionState: SshConnectionState.error,
@@ -260,6 +334,7 @@ class SshNotifier extends Notifier<SshState> {
         port: connection.port,
         username: connection.username,
         options: options,
+        hostKeyVerifier: _buildVerifier(connection),
       );
 
       // シェルは起動しない（exec専用）
@@ -278,6 +353,9 @@ class SshNotifier extends Notifier<SshState> {
         connectionName: connection.name,
         host: connection.host,
       );
+    } on SshHostKeyChangedError catch (e) {
+      // ホスト鍵不一致: 警告状態に遷移し自動再接続しない（FR-004/007）。
+      _handleHostKeyChange(e);
     } on SshConnectionError catch (e) {
       state = state.copyWith(
         connectionState: SshConnectionState.error,
@@ -411,6 +489,7 @@ class SshNotifier extends Notifier<SshState> {
         port: _lastConnection!.port,
         username: _lastConnection!.username,
         options: _lastOptions!,
+        hostKeyVerifier: _buildVerifier(_lastConnection!),
       );
 
       state = state.copyWith(
@@ -420,12 +499,17 @@ class SshNotifier extends Notifier<SshState> {
         reconnectAttempt: 0,
         error: null,
         nextRetryAt: null,
+        clearHostKeyChange: true,
       );
 
       // 再接続成功コールバック
       onReconnectSuccess?.call();
 
       return true;
+    } on SshHostKeyChangedError catch (e) {
+      // 自動再接続中にホスト鍵が変化した場合: 黙って再信頼せず、ループもしない（FR-007）。
+      _handleHostKeyChange(e);
+      return false;
     } catch (e) {
       // 再接続失敗、次の試行をスケジュール
       state = state.copyWith(

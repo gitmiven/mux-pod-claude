@@ -15,6 +15,7 @@ import '../../providers/ssh_provider.dart';
 import '../../providers/tmux_provider.dart';
 import '../../services/keychain/secure_storage.dart';
 import '../../services/network/network_monitor.dart';
+import '../../services/ssh/host_key_verifier.dart' show SshHostKeyChangedError;
 import '../../services/ssh/input_queue.dart';
 import '../../services/ssh/ssh_client.dart' show SshConnectOptions;
 import '../../services/tmux/pane_navigator.dart';
@@ -36,6 +37,7 @@ import '../file_browser/file_browser_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import '../settings/settings_screen.dart';
 import 'widgets/ansi_text_view.dart';
+import 'widgets/host_key_mismatch_dialog.dart';
 
 /// スクロールモードのソース
 enum ScrollModeSource {
@@ -285,6 +287,11 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
       sshProvider,
       (previous, next) {
         if (!mounted || _isDisposed) return;
+        // ホスト鍵不一致を検知したら警告ダイアログを表示（FR-004、再接続/ディープリンク含む）。
+        if (next.hostKeyChange != null &&
+            previous?.hostKeyChange != next.hostKeyChange) {
+          _handleHostKeyChange(next.hostKeyChange!);
+        }
         setState(() {
           _sshState = next;
         });
@@ -374,6 +381,36 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
     }
   }
 
+  /// ホスト鍵不一致ダイアログ表示中フラグ（多重表示防止）
+  bool _hostKeyDialogOpen = false;
+
+  /// ホスト鍵不一致を検知したときの処理（FR-004/005）。
+  ///
+  /// 警告ダイアログを表示し、ユーザーが再信頼を選べば再信頼フラグを立てて接続フローを
+  /// 再実行する。中止を選べば警告をクリアして接続画面を離れる。
+  Future<void> _handleHostKeyChange(SshHostKeyChangedError change) async {
+    if (_hostKeyDialogOpen || !mounted || _isDisposed) return;
+    _hostKeyDialogOpen = true;
+    try {
+      final reTrust = await HostKeyMismatchDialog.show(context, change);
+      if (!mounted || _isDisposed) return;
+      final sshNotifier = ref.read(sshProvider.notifier);
+      if (reTrust == true) {
+        // 明示的に再信頼 → フル接続フローを再実行（初回接続/自動再接続の両方に対応）。
+        sshNotifier.retrustNextConnect();
+        await _connectAndSetup();
+      } else {
+        // 中止: 警告をクリアし、接続画面を離れる。
+        sshNotifier.clearHostKeyChange();
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.of(context).pop();
+        }
+      }
+    } finally {
+      _hostKeyDialogOpen = false;
+    }
+  }
+
   /// SSH接続してtmuxセッションをセットアップ
   Future<void> _connectAndSetup() async {
     if (!mounted) {
@@ -401,6 +438,11 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
       final sshNotifier = ref.read(sshProvider.notifier);
       await sshNotifier.connectWithoutShell(connection, options);
       if (!mounted || _isDisposed) {
+        return;
+      }
+      // ホスト鍵不一致を検知した場合はセットアップを中断（ダイアログはリスナーが表示・FR-004）。
+      if (ref.read(sshProvider).hostKeyChange != null) {
+        setState(() => _isConnecting = false);
         return;
       }
 

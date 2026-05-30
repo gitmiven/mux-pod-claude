@@ -7,8 +7,10 @@ import 'package:uuid/uuid.dart';
 
 import '../../providers/connection_provider.dart';
 import '../../providers/key_provider.dart';
+import '../../providers/ssh_provider.dart';
 import '../../services/keychain/secure_storage.dart';
 import '../../services/ssh/ssh_client.dart';
+import '../../services/ssh/trusted_host_identity.dart';
 import '../../theme/design_colors.dart';
 
 /// 接続編集画面
@@ -108,6 +110,10 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
                 _buildServerSection(),
                 const SizedBox(height: 24),
                 _buildAuthSection(keysState),
+                if (widget.isEditing) ...[
+                  const SizedBox(height: 24),
+                  _buildHostIdentitySection(),
+                ],
               ],
             ),
           ),
@@ -179,6 +185,115 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
         ),
       ),
     );
+  }
+
+  /// 信頼済みホスト識別子（TOFU）の表示と「忘れる」操作（FR-008/009）。
+  Widget _buildHostIdentitySection() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final host = _hostController.text.trim();
+    final port = int.tryParse(_portController.text.trim()) ?? 22;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Server identity'),
+        Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: FutureBuilder<TrustedHostIdentity?>(
+            future: ref.read(trustedHostStoreProvider).get(host, port),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                  height: 24,
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                );
+              }
+              final identity = snapshot.data;
+              if (identity == null) {
+                return Text(
+                  'No trusted host key yet. The server identity is recorded '
+                  'automatically on first connection.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildFieldLabel('FINGERPRINT'),
+                  const SizedBox(height: 4),
+                  SelectableText(
+                    identity.fingerprint,
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildFieldLabel('KEY TYPE'),
+                  const SizedBox(height: 4),
+                  Text(identity.keyType),
+                  const SizedBox(height: 12),
+                  _buildFieldLabel('FIRST TRUSTED'),
+                  const SizedBox(height: 4),
+                  Text(_formatDate(identity.firstTrustedAt)),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colorScheme.error,
+                        side: BorderSide(color: colorScheme.error.withValues(alpha: 0.5)),
+                      ),
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      label: const Text('Forget host identity'),
+                      onPressed: () => _confirmForgetHostKey(host, port),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatDate(DateTime dt) {
+    final local = dt.toLocal();
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${local.year}-${two(local.month)}-${two(local.day)} '
+        '${two(local.hour)}:${two(local.minute)}';
+  }
+
+  Future<void> _confirmForgetHostKey(String host, int port) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Forget host identity?'),
+        content: Text(
+          'The trusted host key for $host:$port will be removed. The next '
+          'connection will re-establish trust on first use.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Forget'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await ref.read(trustedHostStoreProvider).remove(host, port);
+      if (mounted) setState(() {});
+    }
   }
 
   Widget _buildServerSection() {
