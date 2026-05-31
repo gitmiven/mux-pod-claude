@@ -1,7 +1,18 @@
+import 'dart:typed_data';
+
 import 'package:dartssh2/dartssh2.dart';
 import 'package:path/path.dart' as p;
 
 import 'file_entry.dart';
+
+/// Thrown when a file is larger than the read cap for in-app viewing.
+class FileTooLargeException implements Exception {
+  final int size;
+  final int limit;
+  const FileTooLargeException(this.size, this.limit);
+  @override
+  String toString() => 'FileTooLargeException(size: $size, limit: $limit)';
+}
 
 /// SFTP file browser service
 ///
@@ -9,6 +20,41 @@ import 'file_entry.dart';
 /// and folder creation. Upload operations are handled by [SftpService].
 class SftpBrowserService {
   static const _listTimeout = Duration(seconds: 10);
+  static const _readTimeout = Duration(seconds: 20);
+
+  /// Default cap for in-app file viewing (5 MiB). Larger files are refused
+  /// rather than risking an out-of-memory load.
+  static const int defaultReadCap = 5 * 1024 * 1024;
+
+  /// Reads up to [maxBytes] of the file at [path] for in-app viewing.
+  ///
+  /// Throws [FileTooLargeException] when the file's reported size exceeds
+  /// [maxBytes] (checked via `stat` before reading), so an oversized/binary
+  /// file can't OOM the app.
+  Future<Uint8List> readFileBytes(
+    SftpClient sftp,
+    String path, {
+    int maxBytes = defaultReadCap,
+  }) async {
+    final normalizedPath = validatePath(path);
+    final file = await sftp.open(normalizedPath).timeout(_readTimeout);
+    try {
+      final attrs = await file.stat().timeout(_readTimeout);
+      final size = attrs.size;
+      if (size != null && size > maxBytes) {
+        throw FileTooLargeException(size, maxBytes);
+      }
+      // Read one byte past the cap so we can detect files that under-report size.
+      final bytes =
+          await file.readBytes(length: maxBytes + 1).timeout(_readTimeout);
+      if (bytes.length > maxBytes) {
+        throw FileTooLargeException(bytes.length, maxBytes);
+      }
+      return bytes;
+    } finally {
+      await file.close();
+    }
+  }
 
   /// Get directory listing
   ///

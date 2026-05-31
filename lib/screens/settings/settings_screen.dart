@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../providers/settings_provider.dart';
+import '../../services/viewer/file_viewer_type.dart';
 import '../../theme/design_colors.dart';
 import '../../widgets/dialogs/font_size_dialog.dart';
 import '../../widgets/dialogs/font_family_dialog.dart';
@@ -318,6 +319,19 @@ class SettingsScreen extends ConsumerWidget {
                   onChanged: (v) => ref.read(settingsProvider.notifier).setImageBracketedPaste(v),
                 ),
                 const Divider(),
+                const _SectionHeader(title: 'File viewers'),
+                const ListTile(
+                  leading: Icon(Icons.visibility),
+                  title: Text('Open files in-app'),
+                  subtitle: Text('Choose which viewer opens each file extension'),
+                ),
+                ..._buildFileViewerTiles(context, ref, settings),
+                ListTile(
+                  leading: const Icon(Icons.add),
+                  title: const Text('Add mapping'),
+                  onTap: () => _showFileViewerDialog(context, ref),
+                ),
+                const Divider(),
                 const _SectionHeader(title: 'About'),
                 ListTile(
                   leading: const Icon(Icons.info),
@@ -354,6 +368,100 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// One ListTile per configured extension → viewer mapping (sorted by ext),
+  /// with a delete button; tapping a row edits it.
+  List<Widget> _buildFileViewerTiles(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings,
+  ) {
+    final entries = settings.fileViewers.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    return [
+      for (final e in entries)
+        ListTile(
+          leading: const Icon(Icons.insert_drive_file_outlined),
+          title: Text('.${e.key}'),
+          subtitle: Text(
+            (FileViewerType.fromName(e.value) ?? FileViewerType.text).label,
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: 'Remove',
+            onPressed: () =>
+                ref.read(settingsProvider.notifier).removeFileViewer(e.key),
+          ),
+          onTap: () => _showFileViewerDialog(
+            context,
+            ref,
+            extension: e.key,
+            type: FileViewerType.fromName(e.value),
+          ),
+        ),
+    ];
+  }
+
+  /// Add or edit an extension → viewer mapping. When [extension] is given the
+  /// dialog edits that entry; otherwise it adds a new one.
+  Future<void> _showFileViewerDialog(
+    BuildContext context,
+    WidgetRef ref, {
+    String? extension,
+    FileViewerType? type,
+  }) async {
+    final controller = TextEditingController(text: extension ?? '');
+    var selected = type ?? FileViewerType.image;
+    final isEdit = extension != null;
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(isEdit ? 'Edit mapping' : 'Add mapping'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: controller,
+                autofocus: !isEdit,
+                enabled: !isEdit, // extension is the key; edit changes the type
+                decoration: const InputDecoration(
+                  labelText: 'Extension',
+                  hintText: 'e.g. png (no dot)',
+                ),
+              ),
+              const SizedBox(height: 16),
+              SegmentedButton<FileViewerType>(
+                segments: [
+                  for (final t in FileViewerType.values)
+                    ButtonSegment(value: t, label: Text(t.label)),
+                ],
+                selected: {selected},
+                onSelectionChanged: (s) => setState(() => selected = s.first),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (saved != true) return;
+    final ext = controller.text.trim().replaceFirst(RegExp(r'^\.+'), '');
+    if (ext.isEmpty) return;
+    await ref.read(settingsProvider.notifier).setFileViewer(ext, selected);
   }
 
   void _showTextInputDialog(

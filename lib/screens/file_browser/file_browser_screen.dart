@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../providers/file_browser_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../services/sftp/file_entry.dart';
+import '../../services/viewer/file_viewer_type.dart';
 import '../../theme/design_colors.dart';
+import 'file_viewer_screen.dart';
 import 'widgets/file_action_menu.dart';
 import 'widgets/file_list_tile.dart';
 import 'widgets/path_bar.dart';
@@ -287,17 +290,42 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
   }
 
   Future<void> _showActionMenu(BuildContext context, FileEntry entry) async {
-    final action = await FileActionMenu.show(context, entry);
+    final viewerType = FileViewerType.forExtension(
+      ref.read(settingsProvider).fileViewers,
+      entry.extension,
+    );
+    final action = await FileActionMenu.show(
+      context,
+      entry,
+      viewerLabel: viewerType?.label,
+    );
     if (action == null || !mounted) return;
 
     switch (action) {
       case FileAction.open:
         ref.read(fileBrowserProvider.notifier).navigateToDirectory(entry.fullPath);
+      case FileAction.openInViewer:
+        if (viewerType != null) _openInViewer(context, entry, viewerType);
       case FileAction.rename:
         await _showRenameDialog(context, entry);
       case FileAction.delete:
         await _showDeleteConfirmDialog(context, entry);
     }
+  }
+
+  /// Opens the file in an in-app viewer screen (fetches it over SFTP and renders
+  /// it as Image/Markdown/Text) — nothing is sent to the terminal.
+  void _openInViewer(BuildContext context, FileEntry entry, FileViewerType type) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FileViewerScreen(
+          path: entry.fullPath,
+          name: entry.name,
+          type: type,
+        ),
+      ),
+    );
   }
 
   Future<void> _showRenameDialog(BuildContext context, FileEntry entry) async {

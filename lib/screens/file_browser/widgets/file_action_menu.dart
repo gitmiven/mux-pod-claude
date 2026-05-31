@@ -6,31 +6,39 @@ import '../../../theme/design_colors.dart';
 /// Action menu for files/directories
 enum FileAction {
   open,
+  openInViewer,
   rename,
   delete,
 }
 
 /// BottomSheet that displays the action menu
 class FileActionMenu {
-  /// Displays the action menu and returns the selected action
+  /// Displays the action menu and returns the selected action.
+  ///
+  /// When [viewerLabel] is non-null (a viewer is configured for this file's
+  /// extension, e.g. "Image"/"Markdown"), an `Open with <viewer>` item is shown
+  /// for files, between the name/path header and Rename.
   static Future<FileAction?> show(
     BuildContext context,
-    FileEntry entry,
-  ) {
+    FileEntry entry, {
+    String? viewerLabel,
+  }) {
     return showModalBottomSheet<FileAction>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => _FileActionMenuContent(entry: entry),
+      builder: (context) =>
+          _FileActionMenuContent(entry: entry, viewerLabel: viewerLabel),
     );
   }
 }
 
 class _FileActionMenuContent extends StatelessWidget {
   final FileEntry entry;
+  final String? viewerLabel;
 
-  const _FileActionMenuContent({required this.entry});
+  const _FileActionMenuContent({required this.entry, this.viewerLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +111,16 @@ class _FileActionMenuContent extends StatelessWidget {
                 label: 'Open',
                 action: FileAction.open,
                 textColor: textColor,
+              ),
+            // Open in an in-app viewer (only for files with a configured viewer)
+            if (!entry.isDirectory && viewerLabel != null)
+              _buildActionTile(
+                context,
+                icon: Icons.visibility_outlined,
+                label: 'Open with $viewerLabel',
+                action: FileAction.openInViewer,
+                textColor: textColor,
+                iconColor: DesignColors.primary,
               ),
             _buildActionTile(
               context,

@@ -1,12 +1,10 @@
-# Spec quality checklist — 017 open-in-terminal-viewer
+# Spec quality checklist — 017 open-in-app-viewer (revised)
 
-- [x] User value clear (P1: render a browsed file via the user's terminal tools, e.g. timg/glow).
-- [x] Two user stories, both P1: the viewer button (US1) and the configurable mapping (US2, explicitly requested).
-- [x] Grounded in real code: FileAction enum, FileEntry.extension, loadBufferAndPaste/sendKeys send path, AppSettings+prefs, ShellEscape — all cited with locations.
-- [x] Requirements testable (FR-001 placement/visibility, FR-002 command+navigate, FR-004 escaping, FR-005 configurable+persist, FR-006 defaults).
-- [x] Success criteria measurable (SC-001 command build, SC-002 hidden when unmapped, SC-003 prefs round-trip, SC-004 escaping, SC-005 gate ≥368).
-- [x] Implementation-light: states *send `<tool> <path>` to the active pane* + *config is an ext→tool map in settings*, not the exact widget/provider code.
-- [x] Ambiguities resolved in Assumptions: runs in the existing pane (not a new one); tool = command prefix + appended path; unmapped → hidden button; no tool install/validation.
-- [x] Edge cases listed: unmapped ext, directory, dotfile, no pane/disconnected, spaces/quotes in path, tool not installed.
-- [x] Scope bounds: no in-app rendering, no new pane, no tool install, extension-based only — Rename/Delete/Open untouched.
-- [x] Security: path shell-escaped (no injection) — explicit FR + SC.
+- [x] User value clear (P1: preview a browsed file in the app — image/markdown/text).
+- [x] Captures the user's correction: in-app rendering, NOT terminal tools (timg/glow) in a pane.
+- [x] Two P1 stories: the viewer item (US1) + the per-extension configurable mapping (US2).
+- [x] Grounded: FileAction enum, FileEntry.extension, SFTP open/readBytes, AppSettings+prefs, flutter_markdown_plus.
+- [x] Requirements testable (FR-001 placement/visibility, FR-002 in-app render via SFTP, FR-004 configurable+persist, FR-005 defaults, FR-007 size cap, FR-008 loading/error).
+- [x] Measurable SCs (SC-001 menu+open, SC-002 hidden when unmapped, SC-003 prefs round-trip, SC-004 size cap, SC-005 gate ≥368).
+- [x] Edge cases: unmapped, directory, dotfile, too-large/binary, read failure, image decode failure.
+- [x] Scope bounds: no terminal/tmux, no editing, no PDF/video, extension-based only.
