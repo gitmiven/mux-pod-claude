@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../providers/ssh_provider.dart';
 import '../../services/sftp/sftp_browser_service.dart';
 import '../../services/viewer/file_viewer_type.dart';
+import '../../services/viewer/markdown_image.dart';
 
 /// In-app viewer for a remote file: fetches the bytes over SFTP (size-capped)
 /// and renders them as an Image, Markdown, or Text view. Nothing is sent to the
@@ -118,8 +119,40 @@ class _FileViewerScreenState extends ConsumerState<FileViewerScreen> {
 
   Widget _buildMarkdown(Uint8List bytes) {
     final text = utf8.decode(bytes, allowMalformed: true);
-    return Markdown(data: text, selectable: true);
+    return Markdown(
+      data: text,
+      selectable: true,
+      imageBuilder: _markdownImage,
+    );
   }
+
+  /// Renders an embedded markdown image: SFTP for remote/relative paths
+  /// (resolved against this .md file's directory), network for http(s), and
+  /// inline bytes for data URIs.
+  Widget _markdownImage(Uri uri, String? title, String? alt) {
+    if (uri.scheme == 'data') {
+      final data = uri.data;
+      if (data == null) return _brokenImage();
+      return Image.memory(
+        data.contentAsBytes(),
+        errorBuilder: (context, error, stack) => _brokenImage(),
+      );
+    }
+    if (uri.scheme == 'http' || uri.scheme == 'https') {
+      return Image.network(
+        uri.toString(),
+        errorBuilder: (context, error, stack) => _brokenImage(),
+      );
+    }
+    final path = resolveRemoteImagePath(widget.path, uri);
+    if (path == null) return _brokenImage();
+    return _SftpImage(path: path);
+  }
+
+  Widget _brokenImage() => const Padding(
+        padding: EdgeInsets.all(8),
+        child: Icon(Icons.broken_image_outlined),
+      );
 
   Widget _buildText(Uint8List bytes) {
     final text = utf8.decode(bytes, allowMalformed: true);
@@ -140,4 +173,59 @@ class _FileViewerScreenState extends ConsumerState<FileViewerScreen> {
       ),
     );
   }
+}
+
+/// An embedded markdown image fetched over SFTP (size-capped), with loading and
+/// broken-image placeholders. The fetch future is created once so the image
+/// isn't refetched on every rebuild.
+class _SftpImage extends ConsumerStatefulWidget {
+  final String path;
+  const _SftpImage({required this.path});
+
+  @override
+  ConsumerState<_SftpImage> createState() => _SftpImageState();
+}
+
+class _SftpImageState extends ConsumerState<_SftpImage> {
+  final SftpBrowserService _browser = SftpBrowserService();
+  late final Future<Uint8List> _future = _fetch();
+
+  Future<Uint8List> _fetch() async {
+    final client = ref.read(sshProvider.notifier).client;
+    if (client == null || !client.isConnected) {
+      throw StateError('not connected');
+    }
+    final sftp = await client.openSftp();
+    return _browser.readFileBytes(sftp, widget.path);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Padding(
+            padding: EdgeInsets.all(8),
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        }
+        final bytes = snapshot.data;
+        if (snapshot.hasError || bytes == null) return _broken();
+        return Image.memory(
+          bytes,
+          errorBuilder: (context, error, stack) => _broken(),
+        );
+      },
+    );
+  }
+
+  Widget _broken() => const Padding(
+        padding: EdgeInsets.all(8),
+        child: Icon(Icons.broken_image_outlined),
+      );
 }
