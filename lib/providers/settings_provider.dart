@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/settings_migration.dart';
+import '../services/viewer/file_viewer_type.dart';
 
 /// App settings
 class AppSettings {
@@ -57,6 +60,11 @@ class AppSettings {
   final bool imageAutoEnter;
   final bool imageBracketedPaste;
 
+  /// Extension → in-app viewer-type mapping (type-name: `image`/`markdown`/`text`),
+  /// e.g. `png → image`, `md → markdown`. Drives the file browser's
+  /// `Open with <viewer>` action.
+  final Map<String, String> fileViewers;
+
   const AppSettings({
     this.darkMode = true,
     this.fontSize = 14.0,
@@ -86,6 +94,7 @@ class AppSettings {
     this.imagePathFormat = '{path}',
     this.imageAutoEnter = false,
     this.imageBracketedPaste = false,
+    this.fileViewers = kDefaultFileViewers,
   });
 
   bool get isAutoFit => adjustMode == 'autoFit';
@@ -120,6 +129,7 @@ class AppSettings {
     String? imagePathFormat,
     bool? imageAutoEnter,
     bool? imageBracketedPaste,
+    Map<String, String>? fileViewers,
   }) {
     return AppSettings(
       darkMode: darkMode ?? this.darkMode,
@@ -150,6 +160,7 @@ class AppSettings {
       imagePathFormat: imagePathFormat ?? this.imagePathFormat,
       imageAutoEnter: imageAutoEnter ?? this.imageAutoEnter,
       imageBracketedPaste: imageBracketedPaste ?? this.imageBracketedPaste,
+      fileViewers: fileViewers ?? this.fileViewers,
     );
   }
 }
@@ -184,6 +195,27 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const String _keyOverlayArrowKey = 'settings_key_overlay_arrow';
   static const String _keyOverlayShortcutKey = 'settings_key_overlay_shortcut';
   static const String _keyOverlayPositionKey = 'settings_key_overlay_position';
+  static const String _fileViewersKey = 'settings_file_viewers';
+
+  /// Decode the file-viewers map from its stored JSON, falling back to the
+  /// defaults when absent or unparseable. Keeps only entries whose value is a
+  /// recognised viewer type.
+  static Map<String, String> _decodeFileViewers(String? raw) {
+    if (raw == null || raw.isEmpty) return kDefaultFileViewers;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return kDefaultFileViewers;
+      final map = <String, String>{};
+      decoded.forEach((k, v) {
+        final key = k.toString().toLowerCase().trim();
+        final type = FileViewerType.fromName(v.toString());
+        if (key.isNotEmpty && type != null) map[key] = type.name;
+      });
+      return map;
+    } catch (_) {
+      return kDefaultFileViewers;
+    }
+  }
 
   @override
   AppSettings build() {
@@ -229,6 +261,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       imagePathFormat: prefs.getString(_imagePathFormatKey) ?? '{path}',
       imageAutoEnter: prefs.getBool(_imageAutoEnterKey) ?? false,
       imageBracketedPaste: prefs.getBool(_imageBracketedPasteKey) ?? false,
+      fileViewers: _decodeFileViewers(prefs.getString(_fileViewersKey)),
     );
   }
 
@@ -403,6 +436,33 @@ class SettingsNotifier extends Notifier<AppSettings> {
   Future<void> setImageBracketedPaste(bool value) async {
     state = state.copyWith(imageBracketedPaste: value);
     await _saveSetting(_imageBracketedPasteKey, value);
+  }
+
+  /// Replace the whole extension → viewer-type mapping (persisted as JSON).
+  /// Keys are normalised to lower-case; entries with an unknown type are dropped.
+  Future<void> setFileViewers(Map<String, String> value) async {
+    final cleaned = <String, String>{};
+    value.forEach((k, v) {
+      final key = k.toLowerCase().trim();
+      final type = FileViewerType.fromName(v);
+      if (key.isNotEmpty && type != null) cleaned[key] = type.name;
+    });
+    state = state.copyWith(fileViewers: cleaned);
+    await _saveSetting(_fileViewersKey, jsonEncode(cleaned));
+  }
+
+  /// Add or update a single mapping (`extension → viewer type`).
+  Future<void> setFileViewer(String extension, FileViewerType type) async {
+    final next = Map<String, String>.from(state.fileViewers);
+    next[extension.toLowerCase().trim()] = type.name;
+    await setFileViewers(next);
+  }
+
+  /// Remove the mapping for [extension].
+  Future<void> removeFileViewer(String extension) async {
+    final next = Map<String, String>.from(state.fileViewers)
+      ..remove(extension.toLowerCase().trim());
+    await setFileViewers(next);
   }
 
   /// Reload
