@@ -1208,6 +1208,7 @@ mixin _TerminalScreenView on _TerminalScreenLogic {
       builder: (sheetContext) => InputDialogContent(
         initialValue: initialValue,
         recentCommands: ref.read(commandHistoryProvider),
+        loadRecentCommands: _loadRecentCommands,
         onValueChanged: (value) {
           // Save input in real-time
           _savedCommandInput = value;

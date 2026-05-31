@@ -40,8 +40,13 @@ class SpecialKeysBar extends StatefulWidget {
   /// Pass null to hide the bar.
   final KeyBarConfig? variableKeyBar;
 
-  /// Recent commands (most-recent first) for the bar's history button.
+  /// Recent commands (most-recent first) for the bar's history button — the
+  /// immediate fallback list.
   final List<String> recentCommands;
+
+  /// Optional async loader for the history picker (e.g. Claude Code's prompt
+  /// history over SSH); falls back to [recentCommands].
+  final Future<List<String>> Function()? loadRecentCommands;
 
   /// Sends a full command selected from the history picker.
   final void Function(String command)? onSendCommand;
@@ -57,6 +62,7 @@ class SpecialKeysBar extends StatefulWidget {
     this.onImagePickRequested,
     this.variableKeyBar = KeyBarConfig.functionKeys,
     this.recentCommands = const [],
+    this.loadRecentCommands,
     this.onSendCommand,
   });
 

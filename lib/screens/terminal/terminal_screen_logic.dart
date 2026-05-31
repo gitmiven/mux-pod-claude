@@ -1487,6 +1487,19 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
     await _sendSpecialKey('C-k');
   }
 
+  /// Resolves the recent-commands list for the history picker: Claude Code's
+  /// prompt history for the active pane's project, else the app-recorded
+  /// history (023).
+  Future<List<String>> _loadRecentCommands() async {
+    final client = ref.read(sshProvider.notifier).client;
+    final project = ref.read(tmuxProvider).activePane?.currentPath;
+    if (client != null && project != null && project.isNotEmpty) {
+      final claude = await ClaudeHistoryReader.read(client, project);
+      if (claude != null && claude.isNotEmpty) return claude;
+    }
+    return ref.read(commandHistoryProvider);
+  }
+
   ProviderSubscription? _imageTransferSub;
 
   /// Initialize image transfer state listener (once only)

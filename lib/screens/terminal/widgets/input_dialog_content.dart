@@ -11,8 +11,13 @@ class InputDialogContent extends StatefulWidget {
   final void Function(String value) onValueChanged;
   final Future<void> Function(String value) onSend;
 
-  /// Recent commands (most-recent first) for the history picker.
+  /// Recent commands (most-recent first) for the history picker — the immediate
+  /// fallback list.
   final List<String> recentCommands;
+
+  /// Optional async loader for the history picker (e.g. Claude Code's prompt
+  /// history over SSH); falls back to [recentCommands].
+  final Future<List<String>> Function()? loadRecentCommands;
 
   const InputDialogContent({
     super.key,
@@ -20,6 +25,7 @@ class InputDialogContent extends StatefulWidget {
     required this.onValueChanged,
     required this.onSend,
     this.recentCommands = const [],
+    this.loadRecentCommands,
   });
 
   @override
@@ -121,7 +127,8 @@ class _InputDialogContentState extends State<InputDialogContent> {
   void _showHistory() {
     showRecentCommandsSheet(
       context,
-      commands: widget.recentCommands,
+      fallback: widget.recentCommands,
+      load: widget.loadRecentCommands,
       onSelected: _sendValue,
     );
   }

@@ -17,6 +17,7 @@ import '../../services/ssh/host_key_verifier.dart' show SshHostKeyChangedError;
 import '../../services/ssh/input_queue.dart';
 import '../../services/ssh/ssh_client.dart' show SshConnectOptions;
 import '../../services/tmux/pane_navigator.dart';
+import '../../services/terminal/claude_history.dart';
 import '../../services/terminal/command_history.dart';
 import '../../services/terminal/font_calculator.dart';
 import '../../services/terminal/input_line_extractor.dart';
@@ -360,6 +361,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
                 },
                 onImagePickRequested: _handleImageTransfer,
                 recentCommands: ref.watch(commandHistoryProvider),
+                loadRecentCommands: _loadRecentCommands,
                 onSendCommand: (cmd) async {
                   await _sendMultilineText(cmd);
                   await ref.read(commandHistoryProvider.notifier).add(cmd);

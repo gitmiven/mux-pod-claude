@@ -243,7 +243,8 @@ mixin _SpecialKeysBarView on _SpecialKeysBarLogic {
         }
         showRecentCommandsSheet(
           context,
-          commands: widget.recentCommands,
+          fallback: widget.recentCommands,
+          load: widget.loadRecentCommands,
           onSelected: (cmd) => widget.onSendCommand?.call(cmd),
         );
       },
