@@ -10,11 +10,15 @@ class InputDialogContent extends StatefulWidget {
   final void Function(String value) onValueChanged;
   final Future<void> Function(String value) onSend;
 
+  /// Recent commands (most-recent first) for the history picker.
+  final List<String> recentCommands;
+
   const InputDialogContent({
     super.key,
     this.initialValue = '',
     required this.onValueChanged,
     required this.onSend,
+    this.recentCommands = const [],
   });
 
   @override
@@ -98,16 +102,91 @@ class _InputDialogContentState extends State<InputDialogContent> {
     );
   }
 
-  Future<void> _handleSend() async {
+  Future<void> _handleSend() => _sendValue(_controller.text);
+
+  Future<void> _sendValue(String value) async {
     if (_isSending) return;
     setState(() => _isSending = true);
     try {
-      await widget.onSend(_controller.text);
+      await widget.onSend(value);
     } finally {
       if (mounted) {
         setState(() => _isSending = false);
       }
     }
+  }
+
+  /// History picker: lists the unique recent commands; tapping one sends it.
+  void _showHistory() {
+    final colorScheme = Theme.of(context).colorScheme;
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        final commands = widget.recentCommands;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.history, color: colorScheme.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Recent commands',
+                      style: GoogleFonts.spaceGrotesk(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              if (commands.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'No recent commands yet',
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                )
+              else
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: commands.length,
+                    itemBuilder: (context, index) {
+                      final cmd = commands[index];
+                      return ListTile(
+                        dense: true,
+                        title: Text(
+                          cmd,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.jetBrainsMono(fontSize: 13),
+                        ),
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          _sendValue(cmd);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -136,19 +215,12 @@ class _InputDialogContentState extends State<InputDialogContent> {
                 ),
               ),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isDark ? DesignColors.keyBackground : DesignColors.keyBackgroundLight,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'Shift+Enter: new line',
-                  style: GoogleFonts.jetBrainsMono(
-                    fontSize: 10,
-                    color: isDark ? DesignColors.textMuted : DesignColors.textMutedLight,
-                  ),
-                ),
+              // History button (replaces the former Shift+Enter hint).
+              IconButton(
+                onPressed: _showHistory,
+                icon: const Icon(Icons.history),
+                color: colorScheme.primary,
+                tooltip: 'Recent commands',
               ),
             ],
           ),

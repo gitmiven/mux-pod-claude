@@ -1207,6 +1207,7 @@ mixin _TerminalScreenView on _TerminalScreenLogic {
       ),
       builder: (sheetContext) => InputDialogContent(
         initialValue: initialValue,
+        recentCommands: ref.read(commandHistoryProvider),
         onValueChanged: (value) {
           // Save input in real-time
           _savedCommandInput = value;
@@ -1222,6 +1223,8 @@ mixin _TerminalScreenView on _TerminalScreenLogic {
             await _clearPaneInputLine();
           }
           await _sendMultilineText(value);
+          // Record in the recent-commands history (deduped, most-recent first).
+          await ref.read(commandHistoryProvider.notifier).add(value);
           // Clear input on successful send
           _savedCommandInput = '';
           if (sheetContext.mounted) Navigator.pop(sheetContext);
