@@ -9,6 +9,7 @@ import 'package:dartssh2/dartssh2.dart';
 import '../shell/shell_escape.dart';
 import 'host_key_verifier.dart';
 import 'persistent_shell.dart';
+import 'tmux_command_resolver.dart';
 import '../logging/app_log.dart';
 
 /// SSH connection error
@@ -504,18 +505,12 @@ class SshClient {
 
   /// Replace `tmux` in command with detected absolute path
   String _resolveTmuxCommand(String command) {
-    if (_tmuxPath == null) {
-      AppLog.d('_resolveTmuxCommand: _tmuxPath=null, command unchanged');
-      return command;
-    }
-    // Detected/specified absolute path is safely encoded as literal data (FR-011).
-    final safePath = ShellEscape.quote(_tmuxPath!);
-    final resolved = command.replaceAllMapped(
-      RegExp(r'(^|;\s*)tmux\b'),
-      (m) => '${m[1]}$safePath',
-    );
+    // Rewrite EVERY command-position `tmux` (incl. after `| && ; (`) to the
+    // detected absolute path, so piped/chained commands don't fall back to a
+    // different tmux binary on PATH (which can mismatch the server's version).
+    final resolved = TmuxCommandResolver.resolve(command, _tmuxPath);
     if (resolved != command) {
-      AppLog.d('_resolveTmuxCommand: "$command" => "$resolved"');
+      AppLog.d('_resolveTmuxCommand: rewrote tmux to absolute path');
     }
     return resolved;
   }
