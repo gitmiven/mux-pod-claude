@@ -1487,15 +1487,23 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
     await _sendSpecialKey('C-k');
   }
 
-  /// Resolves the recent-commands list for the history picker: Claude Code's
-  /// prompt history for the active pane's project, else the app-recorded
-  /// history (023).
+  /// Resolves the recent-commands list for the history picker, in order:
+  /// Claude Code's prompt history (for the active pane's project) → the pane's
+  /// shell history (bash/zsh) → the app-recorded history (023).
   Future<List<String>> _loadRecentCommands() async {
     final client = ref.read(sshProvider.notifier).client;
-    final project = ref.read(tmuxProvider).activePane?.currentPath;
-    if (client != null && project != null && project.isNotEmpty) {
-      final claude = await ClaudeHistoryReader.read(client, project);
-      if (claude != null && claude.isNotEmpty) return claude;
+    final pane = ref.read(tmuxProvider).activePane;
+    if (client != null) {
+      final project = pane?.currentPath;
+      if (project != null && project.isNotEmpty) {
+        final claude = await ClaudeHistoryReader.read(client, project);
+        if (claude != null && claude.isNotEmpty) return claude;
+      }
+      final shell = await ShellHistoryReader.read(
+        client,
+        shellHint: pane?.currentCommand,
+      );
+      if (shell != null && shell.isNotEmpty) return shell;
     }
     return ref.read(commandHistoryProvider);
   }
