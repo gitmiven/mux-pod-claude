@@ -28,6 +28,8 @@ mixin _SpecialKeysBarView on _SpecialKeysBarLogic {
       child: Row(
         children: [
           _buildSpecialKeyButton('ESC', 'Escape'),
+          // Up arrow at column 2 — sits exactly above Down in the arrow row.
+          _buildArrowKeyCell(Icons.arrow_drop_up, 'Up'),
           _buildSpecialKeyButton('TAB', 'Tab'),
           _buildModifierButton('CTRL', _ctrlPressed, () {
             setState(() => _ctrlPressed = !_ctrlPressed);
@@ -144,43 +146,118 @@ mixin _SpecialKeysBarView on _SpecialKeysBarLogic {
 
   /// Bottom arrow keys + Input button row
   Widget _buildArrowKeysRow() {
+    // Arrows on the same 10-column grid as the modifier row, so Down (col 2)
+    // sits exactly below Up (modifier-row col 2). Cols 1–4 are Left / Down /
+    // Right / reserved; cols 5–10 (flex 6) hold the action buttons.
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         children: [
-          // Arrow keys side by side: left, up, down, right
-          _buildArrowButton(Icons.arrow_left, 'Left'),
-          const SizedBox(width: 2),
-          _buildArrowButton(Icons.arrow_drop_up, 'Up'),
-          const SizedBox(width: 2),
-          _buildArrowButton(Icons.arrow_drop_down, 'Down'),
-          const SizedBox(width: 2),
-          _buildArrowButton(Icons.arrow_right, 'Right'),
-          const SizedBox(width: 8),
-          // Image transfer button
-          if (widget.onImagePickRequested != null) ...[
-            _buildImageTransferButton(),
-            const SizedBox(width: 2),
-          ],
-          // DirectInput mode toggle button
-          _buildDirectInputToggle(),
-          // When DirectInput is enabled: display number keys (1-4) right-aligned
-          if (widget.directInputEnabled) ...[
-            const Spacer(),
-            _buildNumberKeyButton('1'),
-            const SizedBox(width: 2),
-            _buildNumberKeyButton('2'),
-            const SizedBox(width: 2),
-            _buildNumberKeyButton('3'),
-            const SizedBox(width: 2),
-            _buildNumberKeyButton('4'),
-          ],
-          // When DirectInput is disabled: display Input button
-          if (!widget.directInputEnabled) ...[
-            const SizedBox(width: 4),
-            Expanded(child: _buildInputButton()),
-          ],
+          _buildArrowKeyCell(Icons.arrow_left, 'Left'), // col 1
+          _buildArrowKeyCell(Icons.arrow_drop_down, 'Down'), // col 2 (under Up)
+          _buildArrowKeyCell(Icons.arrow_right, 'Right'), // col 3
+          const Expanded(child: SizedBox()), // col 4 — reserved for later
+          Expanded(
+            flex: 6,
+            child: Row(
+              children: [
+                // Image transfer button
+                if (widget.onImagePickRequested != null) ...[
+                  _buildImageTransferButton(),
+                  const SizedBox(width: 2),
+                ],
+                // DirectInput mode toggle button
+                _buildDirectInputToggle(),
+                // When DirectInput is enabled: number keys (1-4) right-aligned
+                if (widget.directInputEnabled) ...[
+                  const Spacer(),
+                  _buildNumberKeyButton('1'),
+                  const SizedBox(width: 2),
+                  _buildNumberKeyButton('2'),
+                  const SizedBox(width: 2),
+                  _buildNumberKeyButton('3'),
+                  const SizedBox(width: 2),
+                  _buildNumberKeyButton('4'),
+                ],
+                // When DirectInput is disabled: the Input button fills the gap
+                if (!widget.directInputEnabled) ...[
+                  const SizedBox(width: 4),
+                  Expanded(child: _buildInputButton()),
+                ],
+                const SizedBox(width: 2),
+                _buildHistoryButton(),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  /// Grid-aligned arrow cell (Expanded) used in both the modifier row (Up) and
+  /// the arrow row (Left/Down/Right) so the columns line up.
+  Widget _buildArrowKeyCell(IconData icon, String tmuxKey) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Expanded(
+      child: GestureDetector(
+        onTapDown: (_) {
+          if (widget.hapticFeedback) {
+            HapticFeedback.lightImpact();
+          }
+        },
+        onTap: () => _sendSpecialKey(tmuxKey),
+        child: Container(
+          height: 32,
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          decoration: BoxDecoration(
+            color: isDark ? DesignColors.keyBackground : DesignColors.keyBackgroundLight,
+            borderRadius: BorderRadius.circular(4),
+            border: Border(
+              bottom: BorderSide(color: isDark ? Colors.black : Colors.grey.shade400, width: 2),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.15),
+                blurRadius: 2,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Icon(icon, size: 18, color: colorScheme.onSurface.withValues(alpha: 0.9)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// History button: opens the recent-commands picker; selecting one sends it.
+  Widget _buildHistoryButton() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: () {
+        if (widget.hapticFeedback) {
+          HapticFeedback.selectionClick();
+        }
+        showRecentCommandsSheet(
+          context,
+          commands: widget.recentCommands,
+          onSelected: (cmd) => widget.onSendCommand?.call(cmd),
+        );
+      },
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: isDark ? DesignColors.keyBackground : DesignColors.keyBackgroundLight,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+        ),
+        child: Center(
+          child: Icon(Icons.history, size: 18, color: colorScheme.onSurface),
+        ),
       ),
     );
   }
@@ -440,33 +517,6 @@ mixin _SpecialKeysBarView on _SpecialKeysBarLogic {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildArrowButton(IconData icon, String tmuxKey) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTapDown: (_) {
-        if (widget.hapticFeedback) {
-          HapticFeedback.lightImpact();
-        }
-      },
-      onTap: () => _sendSpecialKey(tmuxKey),
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: isDark ? DesignColors.keyBackground : DesignColors.keyBackgroundLight,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
-        ),
-        child: Icon(
-          icon,
-          size: 16,
-          color: colorScheme.onSurface,
         ),
       ),
     );

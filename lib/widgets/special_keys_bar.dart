@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/design_colors.dart';
 import 'key_bar_config.dart';
+import 'recent_commands_sheet.dart';
 
 part 'special_keys_bar_logic.dart';
 part 'special_keys_bar_view.dart';
@@ -39,6 +40,12 @@ class SpecialKeysBar extends StatefulWidget {
   /// Pass null to hide the bar.
   final KeyBarConfig? variableKeyBar;
 
+  /// Recent commands (most-recent first) for the bar's history button.
+  final List<String> recentCommands;
+
+  /// Sends a full command selected from the history picker.
+  final void Function(String command)? onSendCommand;
+
   const SpecialKeysBar({
     super.key,
     required this.onKeyPressed,
@@ -49,6 +56,8 @@ class SpecialKeysBar extends StatefulWidget {
     this.onDirectInputToggle,
     this.onImagePickRequested,
     this.variableKeyBar = KeyBarConfig.functionKeys,
+    this.recentCommands = const [],
+    this.onSendCommand,
   });
 
   @override
