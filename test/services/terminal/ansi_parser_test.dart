@@ -151,5 +151,38 @@ void main() {
       // Swapped: BG should be 0xFFD4D4D4
       expect(cursorSpan.style!.backgroundColor, const Color(0xFFD4D4D4));
     });
+
+    group('full-width background (TUI apps like mc)', () {
+      final blue = AnsiParser.standardColors[4]; // SGR 44
+
+      test('background carries across lines until reset', () {
+        // line0 sets blue bg (no reset); line1 has no SGR (inherits); line2 is
+        // empty (inherits); line3 resets to default.
+        final lines =
+            parser.parseLines('\x1b[44mhello\nworld\n\n\x1b[0mdone');
+
+        expect(parser.lineFillColor(lines[0]), blue, reason: 'ends blue');
+        expect(parser.lineFillColor(lines[1]), blue, reason: 'carried');
+        expect(parser.lineFillColor(lines[2]), blue, reason: 'empty, carried');
+        expect(parser.lineFillColor(lines[3]), isNull, reason: 'reset → default');
+      });
+
+      test('a plain line has no fill (default background)', () {
+        final lines = parser.parseLines('just text');
+        expect(parser.lineFillColor(lines.single), isNull);
+      });
+
+      test('SGR 49 (default background) ends the fill', () {
+        final lines = parser.parseLines('\x1b[44mx\x1b[49m\nplain');
+        expect(parser.lineFillColor(lines[0]), isNull);
+        expect(parser.lineFillColor(lines[1]), isNull);
+      });
+
+      test('an inverse line fills with the foreground color', () {
+        final lines = parser.parseLines('\x1b[7mX');
+        // inverse + default fg → fill is the default foreground
+        expect(parser.lineFillColor(lines.single), const Color(0xFFD4D4D4));
+      });
+    });
   });
 }
