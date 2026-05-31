@@ -111,6 +111,7 @@ class TmuxPane {
 - Dart 3.x / Flutter 3.24+ + flutter_riverpod (state management), xterm (terminal display), dartssh2 (SSH connection) (001-terminal-width-resize)
 
 ## Recent Changes
+- 013-fix-multiline-paste: Fixed multi-line command send silently failing. Root cause: `SshClient` only rewrote the *leading* `tmux` to the detected absolute path, so the load-buffer/paste-buffer pipeline ran bare `tmux` after `|`/`&&` → wrong binary (system 3.4 vs user 3.6a) → version mismatch. Extracted a pure `TmuxCommandResolver` (rewrites all command-position tmux), added a reproduction test, and made `_sendMultilineText` surface a SnackBar on failure (was a no-op `AppLog.d`).
 - 012-coexist-app-id: Gave this Claude-focused fork its own app identity so it installs alongside upstream `moezakura/mux-pod` — Android `applicationId` `si.mox.mux_pod_claude` (was `si.mox.mux_pod`), home-screen name "MuxPod Claude" (Android label + iOS `CFBundleDisplayName`).
 
 - 011-terminal-tests: Added the first terminal characterization tests (+13): `SpecialKeysBar` modifier/special-key behavior and `AnsiTextView` hardware-key handling, driven through the widgets' public callbacks (no SSH harness). Silenced `AppLog` in tests. Suite 335→348.

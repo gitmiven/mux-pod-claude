@@ -1649,8 +1649,15 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
         );
         _boostPolling();
       } catch (e2) {
-        AppLog.d('[Terminal] paste-buffer (no-bracketed) send failed: $e2');
-        // TODO: surface a SnackBar after repeated failures.
+        AppLog.e('[Terminal] paste-buffer send failed', error: e2);
+        // Surface the failure instead of dropping the command silently.
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to send the command to the terminal.'),
+            ),
+          );
+        }
       }
     }
   }
