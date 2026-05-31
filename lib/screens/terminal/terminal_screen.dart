@@ -20,6 +20,7 @@ import '../../services/tmux/pane_navigator.dart';
 import '../../services/terminal/claude_history.dart';
 import '../../services/terminal/command_history.dart';
 import '../../services/terminal/font_calculator.dart';
+import '../../services/terminal/shell_history.dart';
 import '../../services/terminal/input_line_extractor.dart';
 import '../../services/tmux/tmux_commands.dart';
 import '../../services/tmux/tmux_parser.dart';
