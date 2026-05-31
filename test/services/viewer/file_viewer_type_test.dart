@@ -50,4 +50,33 @@ void main() {
       expect(kDefaultFileViewers['log'], 'text');
     });
   });
+
+  group('new viewer types (csv / archive / external)', () {
+    test('fromName resolves the new types', () {
+      expect(FileViewerType.fromName('csv'), FileViewerType.csv);
+      expect(FileViewerType.fromName('Archive'), FileViewerType.archive);
+      expect(FileViewerType.fromName('EXTERNAL'), FileViewerType.external);
+    });
+
+    test('isExternal is true only for external', () {
+      expect(FileViewerType.external.isExternal, isTrue);
+      expect(FileViewerType.csv.isExternal, isFalse);
+      expect(FileViewerType.archive.isExternal, isFalse);
+      expect(FileViewerType.image.isExternal, isFalse);
+    });
+
+    test('defaults map the requested extensions', () {
+      expect(kDefaultFileViewers['csv'], 'csv');
+      expect(kDefaultFileViewers['zip'], 'archive');
+      for (final ext in ['html', 'mp4', 'webm', 'xls', 'doc']) {
+        expect(kDefaultFileViewers[ext], 'external', reason: ext);
+      }
+    });
+
+    test('every default value is a known viewer type', () {
+      for (final v in kDefaultFileViewers.values) {
+        expect(FileViewerType.fromName(v), isNotNull, reason: v);
+      }
+    });
+  });
 }

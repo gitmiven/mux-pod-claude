@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:open_filex/open_filex.dart';
 
 import '../../providers/file_browser_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/sftp/file_entry.dart';
+import '../../services/sftp/sftp_browser_service.dart';
 import '../../services/viewer/file_viewer_type.dart';
 import '../../theme/design_colors.dart';
 import 'file_viewer_screen.dart';
@@ -315,9 +317,13 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
     }
   }
 
-  /// Opens the file in an in-app viewer screen (fetches it over SFTP and renders
-  /// it as Image/Markdown/Text) — nothing is sent to the terminal.
+  /// Opens the file: external types download + hand to the OS "Open with…";
+  /// the rest render in an in-app viewer screen.
   void _openInViewer(BuildContext context, FileEntry entry, FileViewerType type) {
+    if (type.isExternal) {
+      _openExternally(entry);
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -328,6 +334,29 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
         ),
       ),
     );
+  }
+
+  /// Downloads [entry] to a temp file and opens it with the device's system app.
+  Future<void> _openExternally(FileEntry entry) async {
+    _showSnack('Downloading ${entry.name}…');
+    try {
+      final path =
+          await ref.read(fileBrowserProvider.notifier).downloadToTemp(entry);
+      final result = await OpenFilex.open(path);
+      if (result.type != ResultType.done) {
+        _showSnack('Could not open this file: ${result.message}');
+      }
+    } on FileTooLargeException {
+      _showSnack('File is too large to open.');
+    } catch (_) {
+      _showSnack("Couldn't open the file.");
+    }
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _showRenameDialog(BuildContext context, FileEntry entry) async {

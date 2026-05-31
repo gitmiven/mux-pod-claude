@@ -6,14 +6,24 @@
 enum FileViewerType {
   image,
   markdown,
-  text;
+  text,
+  csv,
+  archive,
+  external;
 
   /// Human-readable label for the menu / settings (e.g. "Image").
   String get label => switch (this) {
         FileViewerType.image => 'Image',
         FileViewerType.markdown => 'Markdown',
         FileViewerType.text => 'Text',
+        FileViewerType.csv => 'CSV',
+        FileViewerType.archive => 'Archive',
+        FileViewerType.external => 'External app',
       };
+
+  /// Whether opening this type leaves the app (download + system "Open with"),
+  /// rather than rendering in an in-app viewer screen.
+  bool get isExternal => this == FileViewerType.external;
 
   /// Parse from a stored type name (case-insensitive); null if unrecognised.
   static FileViewerType? fromName(String? name) {
@@ -24,6 +34,12 @@ enum FileViewerType {
         return FileViewerType.markdown;
       case 'text':
         return FileViewerType.text;
+      case 'csv':
+        return FileViewerType.csv;
+      case 'archive':
+        return FileViewerType.archive;
+      case 'external':
+        return FileViewerType.external;
       default:
         return null;
     }
@@ -54,4 +70,12 @@ const Map<String, String> kDefaultFileViewers = {
   'markdown': 'markdown',
   'txt': 'text',
   'log': 'text',
+  'csv': 'csv',
+  'zip': 'archive',
+  // Opened in the device's system app ("Open with…").
+  'html': 'external',
+  'mp4': 'external',
+  'webm': 'external',
+  'xls': 'external',
+  'doc': 'external',
 };

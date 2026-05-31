@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dartssh2/dartssh2.dart';
@@ -52,6 +53,42 @@ class SftpBrowserService {
       }
       return bytes;
     } finally {
+      await file.close();
+    }
+  }
+
+  /// Default cap for downloading a file to open in an external app (100 MiB).
+  static const int defaultDownloadCap = 100 * 1024 * 1024;
+
+  /// Streams the remote file at [path] into [dest], up to [maxBytes]. Throws
+  /// [FileTooLargeException] when the file exceeds the cap (so a huge file
+  /// can't fill the device). Used for "open with" downloads.
+  Future<void> downloadToFile(
+    SftpClient sftp,
+    String path,
+    File dest, {
+    int maxBytes = defaultDownloadCap,
+  }) async {
+    final normalizedPath = validatePath(path);
+    final file = await sftp.open(normalizedPath).timeout(_readTimeout);
+    final sink = dest.openWrite();
+    var written = 0;
+    try {
+      final attrs = await file.stat().timeout(_readTimeout);
+      final size = attrs.size;
+      if (size != null && size > maxBytes) {
+        throw FileTooLargeException(size, maxBytes);
+      }
+      await for (final chunk in file.read()) {
+        written += chunk.length;
+        if (written > maxBytes) {
+          throw FileTooLargeException(written, maxBytes);
+        }
+        sink.add(chunk);
+      }
+      await sink.flush();
+    } finally {
+      await sink.close();
       await file.close();
     }
   }
