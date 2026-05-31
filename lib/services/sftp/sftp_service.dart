@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:uuid/uuid.dart';
 
-/// SFTPアップロード結果
+/// SFTP upload result
 class SftpUploadResult {
   final String remotePath;
   final int bytesWritten;
@@ -14,22 +14,22 @@ class SftpUploadResult {
   });
 }
 
-/// SFTPアップロードサービス
+/// SFTP upload service
 class SftpService {
   static const _uuid = Uuid();
   static final _safeCharsRegex = RegExp(r'[^a-zA-Z0-9._-]');
 
-  /// ファイル名をサニタイズ（安全な文字のみ許可）
+  /// Sanitize filename (permit only safe characters)
   ///
-  /// [a-zA-Z0-9._-] 以外の文字は `_` に置換する。
+  /// Replace characters other than [a-zA-Z0-9._-] with `_`.
   static String sanitizeFilename(String raw) {
     if (raw.isEmpty) return 'unnamed';
     return raw.replaceAll(_safeCharsRegex, '_');
   }
 
-  /// タイムスタンプ + UUID短縮でユニークファイル名を生成
+  /// Generate unique filename from timestamp + shortened UUID
   ///
-  /// 例: img_20260403_143025_a3f2.png
+  /// Example: img_20260403_143025_a3f2.png
   static String generateFilename(String prefix, String extension) {
     final now = DateTime.now();
     final timestamp =
@@ -39,7 +39,7 @@ class SftpService {
     return '${sanitizeFilename(prefix)}${timestamp}_$shortUuid.$sanitizedExt';
   }
 
-  /// リモートディレクトリの存在確認・作成
+  /// Check existence and create remote directory
   Future<void> ensureDirectory(SftpClient sftp, String remotePath) async {
     try {
       await sftp.stat(remotePath);
@@ -48,13 +48,13 @@ class SftpService {
     }
   }
 
-  /// ファイルアップロード
+  /// File upload
   ///
-  /// [sftp] SFTPクライアント
-  /// [remoteDir] リモートディレクトリパス（末尾/なし可）
-  /// [filename] ファイル名
-  /// [bytes] アップロードするバイトデータ
-  /// [onProgress] 進捗コールバック (0.0 ~ 1.0)
+  /// [sftp] SFTP client
+  /// [remoteDir] Remote directory path (trailing / optional)
+  /// [filename] Filename
+  /// [bytes] Byte data to upload
+  /// [onProgress] Progress callback (0.0 ~ 1.0)
   Future<SftpUploadResult> upload({
     required SftpClient sftp,
     required String remoteDir,
@@ -77,7 +77,7 @@ class SftpService {
       final totalBytes = bytes.length;
       var written = 0;
 
-      // チャンク分割でストリーム書き込み（進捗追跡用）
+      // Stream write with chunking (for progress tracking)
       const chunkSize = 32 * 1024; // 32KB
       final chunks = <Uint8List>[];
       for (var offset = 0; offset < totalBytes; offset += chunkSize) {
@@ -96,11 +96,11 @@ class SftpService {
 
       return SftpUploadResult(remotePath: remotePath, bytesWritten: totalBytes);
     } catch (e) {
-      // 部分ファイルのクリーンアップ試行
+      // Attempt cleanup of partial file
       try {
         await sftp.remove(remotePath);
       } catch (_) {
-        // クリーンアップ失敗は無視
+        // Ignore cleanup failure
       }
       rethrow;
     } finally {

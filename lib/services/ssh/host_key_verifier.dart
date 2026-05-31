@@ -5,23 +5,24 @@ import 'host_key_fingerprint.dart';
 import 'trusted_host_identity.dart';
 import 'trusted_host_store.dart';
 
-/// TOFU検証の判定結果。
+/// TOFU verification result determination.
 enum HostKeyVerificationOutcome {
-  /// 保存済み identity が無い → 初回信頼（認証成功後にコミット）。
+  /// No stored identity → first-time trust (committed after successful authentication).
   firstUse,
 
-  /// 提示された identity が保存済みと一致 → そのまま続行。
+  /// Presented identity matches stored → continue as-is.
   match,
 
-  /// 提示された identity が保存済みと不一致 → フェイルクローズしてユーザーに提示。
+  /// Presented identity does not match stored → fail-close and present to user.
   mismatch,
 }
 
-/// ホスト鍵が変化したことを示す型付き例外。
+/// Typed exception indicating host key has changed.
 ///
-/// [host]/[port] のエンドポイントに対し、以前信頼した [storedFingerprint] と今回提示された
-/// [presentedFingerprint] が異なる場合に [SshClient.connect] が送出する。警告・診断出力には
-/// 秘密情報（パスワード/パスフレーズ/秘密鍵）を一切含めない（FR-015）。
+/// Thrown by [SshClient.connect] when [storedFingerprint] (previously trusted for
+/// [host]/[port] endpoint) differs from [presentedFingerprint] (just presented).
+/// Warning and diagnostic output must not contain any secret information
+/// (passwords/passphrases/private keys) (FR-015).
 class SshHostKeyChangedError implements Exception {
   final String host;
   final int port;
@@ -43,17 +44,17 @@ class SshHostKeyChangedError implements Exception {
       '(was $storedFingerprint, now $presentedFingerprint, $keyType)';
 }
 
-/// 1回の接続試行に対するホスト鍵検証器（TOFU）。
+/// Host key verifier (TOFU) for a single connection attempt.
 ///
-/// dartssh2 の `onVerifyHostKey(type, md5)` から [verify] を呼び、信頼/拒否を判定する。
-/// 鍵はプロトコル層で署名検証済みのため、ここでは「信頼」のみを判断する。
-/// 信頼の永続化は認証成功後に [commit] で行う（失敗した認証で信頼を汚染しないため・D3）。
+/// Call [verify] from dartssh2's `onVerifyHostKey(type, md5)` to determine trust/rejection.
+/// Since keys are signature-verified at protocol layer, only judge 'trust' here.
+/// Persist trust via [commit] after successful authentication (to avoid tainting trust with failed auth · D3).
 class HostKeyVerifier {
   final TrustedHostStore store;
   final String host;
   final int port;
 
-  /// ユーザーが不一致を明示的に再信頼した場合に true（FR-005）。
+  /// True if user explicitly re-trusted despite mismatch (FR-005).
   final bool trustNewHostKey;
 
   HostKeyVerifier({
@@ -63,16 +64,16 @@ class HostKeyVerifier {
     this.trustNewHostKey = false,
   });
 
-  /// 認証成功後にコミットすべき identity（初回信頼・再信頼）。
+  /// Identity to commit after successful authentication (first-time trust or re-trust).
   TrustedHostIdentity? _pendingSave;
 
-  /// 一致した既存 identity（認証成功後に lastVerifiedAt を更新）。
+  /// Matched existing identity (update lastVerifiedAt after successful authentication).
   TrustedHostIdentity? _matched;
 
-  /// 不一致を検知した場合の情報（[trustNewHostKey] が false のとき設定）。
+  /// Information when mismatch is detected (set when [trustNewHostKey] is false).
   SshHostKeyChangedError? pendingMismatch;
 
-  /// 純粋な判定ロジック（dartssh2 非依存・テスト容易）。
+  /// Pure decision logic (dartssh2-independent, test-friendly).
   static HostKeyVerificationOutcome decide(
     TrustedHostIdentity? stored,
     String presentedFingerprint,
@@ -84,10 +85,10 @@ class HostKeyVerifier {
     return HostKeyVerificationOutcome.mismatch;
   }
 
-  /// dartssh2 の `onVerifyHostKey` コールバック本体。
+  /// dartssh2's onVerifyHostKey callback body.
   ///
-  /// [type] はホスト鍵アルゴリズム名、[md5Digest] はホスト鍵のMD5ダイジェスト。
-  /// 受理する場合 true、拒否（ハンドシェイク中断）する場合 false を返す。
+  /// [type] is host key algorithm name, [md5Digest] is host key MD5 digest.
+  /// Return true to accept, false to reject (abort handshake).
   FutureOr<bool> verify(String type, Uint8List md5Digest) async {
     final presented = HostKeyFingerprint.formatMd5(md5Digest);
     final stored = await store.get(host, port);
@@ -112,7 +113,7 @@ class HostKeyVerifier {
 
       case HostKeyVerificationOutcome.mismatch:
         if (trustNewHostKey) {
-          // 明示的な再信頼: 新しい identity で置換（firstTrustedAt はリセット）。
+          // Explicit re-trust: replace with new identity (firstTrustedAt is reset).
           _pendingSave = TrustedHostIdentity(
             host: host,
             port: port,
@@ -134,7 +135,7 @@ class HostKeyVerifier {
     }
   }
 
-  /// 認証成功後に信頼を永続化する（D3: first *successful* connection）。
+  /// Persist trust after successful authentication (D3: first *successful* connection).
   Future<void> commit() async {
     if (_pendingSave != null) {
       await store.save(_pendingSave!);

@@ -1,25 +1,25 @@
-/// 切断中の入力をキューイングするクラス
+/// Class for queuing input while disconnected
 ///
-/// SSH接続が切断されている間のキー入力を保持し、
-/// 再接続後にまとめて送信できるようにする。
+/// Holds key input while the SSH connection is disconnected,
+/// allowing batched sending after reconnection.
 class InputQueue {
   final List<String> _queue = [];
 
-  /// 最大キューサイズ（文字数）
+  /// Maximum queue size (character count)
   static const int maxSize = 1000;
 
-  /// キューに入力を追加
+  /// Adds input to the queue
   ///
-  /// maxSizeを超える場合は追加されず、isOverflowがtrueになる。
+  /// If exceeding maxSize, the input is not added and isOverflow becomes true.
   void enqueue(String input) {
     if (length + input.length <= maxSize) {
       _queue.add(input);
     }
   }
 
-  /// キュー内のすべての入力を取り出して結合
+  /// Extracts and joins all input from the queue
   ///
-  /// 取り出し後、キューは空になる。
+  /// After extraction, the queue becomes empty.
   String flush() {
     if (_queue.isEmpty) return '';
     final result = _queue.join();
@@ -27,15 +27,15 @@ class InputQueue {
     return result;
   }
 
-  /// キューをクリア
+  /// Clears the queue
   void clear() {
     _queue.clear();
   }
 
-  /// キューが空か
+  /// Whether the queue is empty
   bool get isEmpty => _queue.isEmpty;
 
-  /// キュー内の合計文字数
+  /// Total character count in the queue
   int get length {
     int total = 0;
     for (final item in _queue) {
@@ -44,9 +44,9 @@ class InputQueue {
     return total;
   }
 
-  /// オーバーフロー状態か（これ以上追加できない）
+  /// Whether the queue is in overflow state (cannot add more)
   bool get isOverflow => length >= maxSize;
 
-  /// キュー内のアイテム数
+  /// Number of items in the queue
   int get itemCount => _queue.length;
 }

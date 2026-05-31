@@ -1,6 +1,6 @@
 import 'package:dartssh2/dartssh2.dart';
 
-/// ソートオプション
+/// Sort options
 enum SortOption {
   name,
   size,
@@ -8,7 +8,7 @@ enum SortOption {
   type,
 }
 
-/// リモートファイルシステムのエントリ（ファイルまたはディレクトリ）
+/// Remote filesystem entry (file or directory)
 class FileEntry {
   final String name;
   final String fullPath;
@@ -28,11 +28,11 @@ class FileEntry {
     this.permissionString,
   });
 
-  /// SftpName から FileEntry を生成
+  /// Create a FileEntry from SftpName
   factory FileEntry.fromSftpName(SftpName sftpName, String parentPath) {
     final attr = sftpName.attr;
     final isLink = attr.isSymbolicLink;
-    // シンボリックリンクの場合、longname の先頭 'd' でディレクトリリンクを判定
+    // For symbolic links, check if it's a directory link by the first 'd' character in longname
     final isDir = attr.isDirectory ||
         (isLink && sftpName.longname.isNotEmpty && sftpName.longname[0] == 'd');
     final name = sftpName.filename;
@@ -51,23 +51,23 @@ class FileEntry {
     );
   }
 
-  /// 隠しファイル（ドットファイル）かどうか
+  /// Whether it is a hidden file (dot file)
   bool get isHidden => name.startsWith('.');
 
-  /// ファイル拡張子を取得
+  /// Get the file extension
   String get extension {
     final dotIndex = name.lastIndexOf('.');
     if (dotIndex <= 0 || dotIndex == name.length - 1) return '';
     return name.substring(dotIndex + 1).toLowerCase();
   }
 
-  /// 更新日時を DateTime に変換
+  /// Convert modified time to DateTime
   DateTime? get modifiedDateTime {
     if (modifiedTime == null) return null;
     return DateTime.fromMillisecondsSinceEpoch(modifiedTime! * 1000);
   }
 
-  /// サイズを人間が読める形式にフォーマット
+  /// Format size in human-readable format
   String get formattedSize {
     if (size == null) return '';
     if (size! < 1024) return '$size B';
@@ -78,7 +78,7 @@ class FileEntry {
     return '${(size! / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
-  /// SftpFileMode からパーミッション文字列を生成（例: "rwxr-xr-x"）
+  /// Generate permission string from SftpFileMode (e.g., "rwxr-xr-x")
   static String? _formatPermissions(SftpFileMode? mode) {
     if (mode == null) return null;
     final raw = mode.value & 0x1FF;

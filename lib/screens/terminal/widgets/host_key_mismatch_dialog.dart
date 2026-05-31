@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../../../services/ssh/host_key_verifier.dart';
 
-/// ホスト鍵が変化したことを警告し、中止 / 再信頼 をユーザーに選ばせるダイアログ（FR-004/005）。
+/// Dialog that warns when the host key has changed and allows the user to choose
+/// between abort or re-trust (FR-004/005).
 ///
-/// 以前信頼したフィンガープリントと今回提示されたフィンガープリントの両方を表示する。
-/// 秘密情報（パスワード/パスフレーズ/秘密鍵）は一切表示しない（FR-015）。
+/// Displays both the previously trusted fingerprint and the newly presented fingerprint.
+/// Does not display any secret information (password/passphrase/private key) (FR-015).
 class HostKeyMismatchDialog extends StatelessWidget {
   final SshHostKeyChangedError change;
 
   const HostKeyMismatchDialog({super.key, required this.change});
 
-  /// ダイアログを表示する。戻り値 true = 再信頼して続行 / false・null = 中止。
+  /// Shows the dialog. Returns true = re-trust and continue / false or null = abort.
   static Future<bool?> show(
     BuildContext context,
     SshHostKeyChangedError change,

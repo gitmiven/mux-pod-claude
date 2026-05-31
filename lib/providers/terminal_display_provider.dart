@@ -4,35 +4,35 @@ import '../services/terminal/font_calculator.dart';
 import '../services/tmux/tmux_parser.dart';
 import 'settings_provider.dart';
 
-/// ターミナル表示状態
+/// Terminal display state
 ///
-/// フォントサイズ、スクロール状態、ズーム状態を管理する。
+/// Manages font size, scroll state, and zoom state.
 class TerminalDisplayState {
-  /// ペインの横幅（文字数）
+  /// Pane width in characters
   final int paneWidth;
 
-  /// ペインの縦幅（行数）
+  /// Pane height in lines
   final int paneHeight;
 
-  /// 利用可能なスクリーン幅（ピクセル）
+  /// Available screen width in pixels
   final double screenWidth;
 
-  /// 利用可能なスクリーン高さ（ピクセル）
+  /// Available screen height in pixels
   final double screenHeight;
 
-  /// 計算されたフォントサイズ
+  /// Calculated font size
   final double calculatedFontSize;
 
-  /// 水平スクロールが必要か
+  /// Whether horizontal scrolling is needed
   final bool needsHorizontalScroll;
 
-  /// 水平スクロール位置
+  /// Horizontal scroll position
   final double horizontalScrollOffset;
 
-  /// ピンチズーム倍率（1.0 = 等倍）
+  /// Pinch zoom scale factor (1.0 = normal size)
   final double zoomScale;
 
-  /// ズーム操作中か
+  /// Whether zoom is in progress
   final bool isZooming;
 
   const TerminalDisplayState({
@@ -47,7 +47,7 @@ class TerminalDisplayState {
     this.isZooming = false,
   });
 
-  /// 実際に適用されるフォントサイズ
+  /// Effective font size that is actually applied
   double get effectiveFontSize {
     if (isZooming) {
       return calculatedFontSize * zoomScale;
@@ -108,65 +108,65 @@ class TerminalDisplayState {
       );
 }
 
-/// ターミナル表示状態を管理するNotifier
+/// Notifier that manages terminal display state
 class TerminalDisplayNotifier extends Notifier<TerminalDisplayState> {
-  /// 最大フォントサイズ
+  /// Maximum font size
   static const double maxFontSize = 48.0;
 
   @override
   TerminalDisplayState build() => const TerminalDisplayState();
 
-  /// ペイン情報を更新
+  /// Update pane information
   ///
-  /// ペイン選択時に呼び出し、フォントサイズを再計算する。
+  /// Called when a pane is selected to recalculate font size.
   void updatePane(TmuxPane pane) {
-    // ズーム状態をリセット
+    // Reset zoom state
     state = state.copyWith(
       paneWidth: pane.width,
       paneHeight: pane.height,
       zoomScale: 1.0,
       isZooming: false,
-      horizontalScrollOffset: 0.0, // スクロール位置もリセット
+      horizontalScrollOffset: 0.0, // Also reset scroll position
     );
     _recalculateFontSize();
   }
 
-  /// スクリーン幅を更新
+  /// Update screen width
   ///
-  /// LayoutBuilder から呼び出される。
+  /// Called from LayoutBuilder.
   void updateScreenWidth(double width) {
-    if (state.screenWidth == width) return; // 変更なしなら何もしない
+    if (state.screenWidth == width) return; // If no change, do nothing
     state = state.copyWith(screenWidth: width);
     _recalculateFontSize();
   }
 
-  /// スクリーンサイズを更新
+  /// Update screen size
   ///
-  /// LayoutBuilder から幅と高さの両方を更新する。
+  /// Updates both width and height from LayoutBuilder.
   void updateScreenSize(double width, double height) {
     state = state.copyWith(screenWidth: width, screenHeight: height);
     _recalculateFontSize();
     _updateScrollRequirement();
   }
 
-  /// 水平スクロール位置を更新
+  /// Update horizontal scroll position
   void updateHorizontalScrollOffset(double offset) {
     state = state.copyWith(horizontalScrollOffset: offset);
   }
 
-  /// ピンチズーム開始
+  /// Start pinch zoom
   void startZoom() {
     state = state.copyWith(isZooming: true);
   }
 
-  /// ピンチズーム更新
+  /// Update pinch zoom
   void updateZoom(double scale) {
     state = state.copyWith(zoomScale: scale);
   }
 
-  /// ピンチズーム終了
+  /// End pinch zoom
   ///
-  /// ズーム後のフォントサイズを確定し、スケールをリセットする。
+  /// Finalizes the font size after zoom and resets the scale.
   void endZoom() {
     final settings = ref.read(settingsProvider);
     final newFontSize = state.calculatedFontSize * state.zoomScale;
@@ -177,11 +177,11 @@ class TerminalDisplayNotifier extends Notifier<TerminalDisplayState> {
       isZooming: false,
     );
 
-    // 水平スクロールの必要性を再計算
+    // Recalculate horizontal scroll requirement
     _updateScrollRequirement();
   }
 
-  /// フォントサイズを再計算
+  /// Recalculate font size
   void _recalculateFontSize() {
     final settings = ref.read(settingsProvider);
 
@@ -198,7 +198,7 @@ class TerminalDisplayNotifier extends Notifier<TerminalDisplayState> {
     );
   }
 
-  /// 水平スクロールの必要性を更新
+  /// Update horizontal scroll requirement
   void _updateScrollRequirement() {
     final settings = ref.read(settingsProvider);
     final terminalWidth = FontCalculator.calculateTerminalWidth(
@@ -212,13 +212,13 @@ class TerminalDisplayNotifier extends Notifier<TerminalDisplayState> {
     );
   }
 
-  /// 設定変更時に再計算を強制
+  /// Force recalculation when settings change
   void onSettingsChanged() {
     _recalculateFontSize();
   }
 }
 
-/// ターミナル表示プロバイダー
+/// Terminal display provider
 final terminalDisplayProvider =
     NotifierProvider<TerminalDisplayNotifier, TerminalDisplayState>(
   () => TerminalDisplayNotifier(),

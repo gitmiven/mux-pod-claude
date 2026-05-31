@@ -3,10 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../services/terminal/tmux_key_display.dart';
 
-/// キーオーバーレイの状態管理
+/// Key overlay state management
 ///
-/// [ValueNotifier] と異なり、同じ値でも [notifyListeners] を呼ぶため
-/// 連打時のパルスアニメーションが正しくトリガーされる。
+/// Unlike [ValueNotifier], [notifyListeners] is called even with the same value so that
+/// pulse animation on repeated key presses is correctly triggered.
 class KeyOverlayState extends ChangeNotifier {
   String? _text;
   bool _pulse = false;
@@ -27,7 +27,7 @@ class KeyOverlayState extends ChangeNotifier {
   }
 }
 
-/// キー送信時のオーバーレイ表示ウィジェット
+/// Overlay display widget when sending keys
 class KeyOverlayWidget extends StatefulWidget {
   final KeyOverlayState overlayState;
   final KeyOverlayPosition position;

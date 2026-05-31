@@ -1,12 +1,12 @@
-/// tmuxのバージョン情報を保持し、機能の対応状況を判定するクラス
+/// A class that holds tmux version information and determines feature compatibility
 class TmuxVersionInfo {
   final int major;
   final int minor;
 
   const TmuxVersionInfo(this.major, this.minor);
 
-  /// "tmux 3.4" や "tmux 2.9a" 形式の文字列をパースする
-  /// パース失敗時はnullを返す
+  /// Parses a version string in the format "tmux 3.4" or "tmux 2.9a"
+  /// Returns null if parsing fails
   static TmuxVersionInfo? parse(String versionOutput) {
     final match = RegExp(r'tmux\s+(\d+)\.(\d+)').firstMatch(versionOutput);
     if (match == null) return null;
@@ -16,10 +16,10 @@ class TmuxVersionInfo {
     );
   }
 
-  /// resize-window -x -y は tmux 2.9+ で追加
+  /// resize-window -x -y was added in tmux 2.9+
   bool get supportsResizeWindow => major > 2 || (major == 2 && minor >= 9);
 
-  /// resize-pane -x -y は tmux 1.7+ で追加（実質全バージョン対応）
+  /// resize-pane -x -y was added in tmux 1.7+ (effectively supported in all versions)
   bool get supportsResizePaneToSize => major > 1 || (major == 1 && minor >= 7);
 
   @override

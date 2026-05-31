@@ -59,3 +59,6 @@ worktree/
 # Signing
 android/key.properties
 android/app/upload-keystore.jks
+
+# Local analysis / working notes (not for the repo)
+miven/

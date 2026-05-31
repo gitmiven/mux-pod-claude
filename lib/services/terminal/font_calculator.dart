@@ -3,40 +3,40 @@ import 'dart:developer' as developer;
 import 'package:flutter/painting.dart';
 import 'terminal_font_styles.dart';
 
-/// フォントサイズ計算結果
+/// Font size calculation result
 typedef FontCalculateResult = ({double fontSize, bool needsScroll});
 
-/// ターミナルフォントサイズ計算サービス
+/// Terminal font size calculation service
 ///
-/// ペインの文字幅と画面幅から最適なフォントサイズを計算する。
+/// Calculates the optimal font size from pane character width and screen width.
 class FontCalculator {
-  /// デフォルトのフォントサイズ
+  /// Default font size
   static const double defaultFontSize = 14.0;
 
-  /// 文字幅比率のキャッシュ（フォントファミリー → 比率）
+  /// Cache of character width ratio (font family → ratio)
   static final Map<String, double> _charWidthRatioCache = {};
 
-  /// デフォルトのペイン幅（文字数）
+  /// Default pane width (in characters)
   static const int defaultPaneWidth = 80;
 
-  /// 最小ペイン幅（文字数）- これより狭いペインはこの値にクランプ
+  /// Minimum pane width (in characters) - narrower panes are clamped to this value
   static const int minPaneWidth = 10;
 
-  /// 画面幅とペイン文字数からフォントサイズを計算
+  /// Calculates font size from screen width and pane character width
   ///
-  /// [screenWidth] 利用可能なスクリーン幅（ピクセル）
-  /// [paneCharWidth] ペインの横幅（文字数）
-  /// [fontFamily] フォントファミリー
-  /// [minFontSize] 最小フォントサイズ（下限）
+  /// [screenWidth] Available screen width in pixels
+  /// [paneCharWidth] Pane horizontal width in characters
+  /// [fontFamily] Font family
+  /// [minFontSize] Minimum font size (lower bound)
   ///
-  /// Returns: (fontSize, needsScroll) のRecord
+  /// Returns: Record of (fontSize, needsScroll)
   static FontCalculateResult calculate({
     required double screenWidth,
     required int paneCharWidth,
     required String fontFamily,
     required double minFontSize,
   }) {
-    // T031: ペイン幅が0以下の場合はデフォルト80にフォールバック
+    // T031: Fallback to default 80 if pane width is 0 or less
     int effectivePaneWidth = paneCharWidth;
     if (paneCharWidth <= 0) {
       developer.log(
@@ -45,7 +45,7 @@ class FontCalculator {
       );
       effectivePaneWidth = defaultPaneWidth;
     }
-    // T032: 極端に狭いペイン（10文字未満）は最小値にクランプ
+    // T032: Clamp extremely narrow panes (less than 10 characters) to the minimum value
     else if (paneCharWidth < minPaneWidth) {
       developer.log(
         'Narrow pane ($paneCharWidth chars), clamping to minimum: $minPaneWidth',
@@ -54,7 +54,7 @@ class FontCalculator {
       effectivePaneWidth = minPaneWidth;
     }
 
-    // 無効なスクリーン幅の場合はデフォルト値を返す
+    // Return default value if screen width is invalid
     if (screenWidth <= 0) {
       developer.log(
         'Invalid screen width ($screenWidth), returning default font size',
@@ -63,21 +63,21 @@ class FontCalculator {
       return (fontSize: defaultFontSize, needsScroll: false);
     }
 
-    // 文字幅比率を測定
+    // Measure character width ratio
     final charWidthRatio = measureCharWidthRatio(fontFamily);
 
-    // 計算: fontSize = screenWidth / (paneWidth × charWidthRatio)
+    // Calculation: fontSize = screenWidth / (paneWidth × charWidthRatio)
     final calculatedSize = screenWidth / (effectivePaneWidth * charWidthRatio);
 
     final FontCalculateResult result;
     if (calculatedSize >= minFontSize) {
       result = (fontSize: calculatedSize, needsScroll: false);
     } else {
-      // 最小フォントサイズを下回る場合は水平スクロールが必要
+      // Horizontal scrolling is needed if below minimum font size
       result = (fontSize: minFontSize, needsScroll: true);
     }
 
-    // T034: フォントサイズ計算結果をログ出力
+    // T034: Log font size calculation result
     developer.log(
       'Calculated: screen=${screenWidth.toStringAsFixed(1)}px, '
       'pane=${effectivePaneWidth}chars, '
@@ -89,20 +89,20 @@ class FontCalculator {
     return result;
   }
 
-  /// フォントファミリーの文字幅比率を測定（キャッシュ使用）
+  /// Measures character width ratio for a font family (using cache)
   ///
-  /// 等幅フォントでは、1文字の幅 = fontSize × charWidthRatio
-  /// 基準フォントサイズ100で測定し、比率を返す。
-  /// 精度向上のため、10文字分の幅を測定して平均を取る。
+  /// For monospace fonts, character width = fontSize × charWidthRatio.
+  /// Measures at a base font size of 100 and returns the ratio.
+  /// For accuracy, measures 10 characters and takes the average.
   static double measureCharWidthRatio(String fontFamily) {
-    // キャッシュから取得
+    // Retrieve from cache
     if (_charWidthRatioCache.containsKey(fontFamily)) {
       return _charWidthRatioCache[fontFamily]!;
     }
 
     const baseFontSize = 100.0;
-    // 等幅フォントでも数字とアルファベットで微妙にメトリクスが異なる場合があるため、
-    // 典型的なパターンを含めて平均を取る
+    // Even for monospace fonts, metrics can differ subtly between digits and letters,
+    // so we include typical patterns and take the average
     const testString = '0123456789';
 
     final painter = TextPainter(
@@ -113,14 +113,14 @@ class FontCalculator {
       textDirection: TextDirection.ltr,
     )..layout();
 
-    // 平均幅を算出
-    // 0.8文字分左にずれる（charWidthが小さい）という報告があるため、
-    // 計算結果が小さくなりすぎないよう、ごくわずかなバッファ(0.01%)を持たせるか検討したが、
-    // そもそも 'M' (幅広) だけでなく '0' (標準的) も含めることで自然に補正されることを期待。
-    // それでも足りない場合はオフセット調整が必要だが、まずは測定文字種の変更で対応。
+    // Calculate average width
+    // There have been reports of 0.8 character offset to the left (smaller charWidth),
+    // so we considered adding a small buffer (0.01%) to avoid the calculated result being too small.
+    // However, by including '0' (standard width) in addition to 'M' (wide), we expect natural correction.
+    // If that is still insufficient, offset adjustment will be needed, but we first address this by changing the test characters.
     final ratio = (painter.width / testString.length) / baseFontSize;
 
-    // キャッシュに保存
+    // Store in cache
     _charWidthRatioCache[fontFamily] = ratio;
 
     developer.log(
@@ -131,14 +131,14 @@ class FontCalculator {
     return ratio;
   }
 
-  /// キャッシュをクリア（テスト用またはフォント変更時）
+  /// Clear cache (for testing or when font changes)
   static void clearCache() {
     _charWidthRatioCache.clear();
   }
 
-  /// ターミナルの表示幅（ピクセル）を計算
+  /// Calculate terminal display width in pixels
   ///
-  /// 水平スクロールコンテナのサイズ計算に使用。
+  /// Used for calculating horizontal scroll container size.
   static double calculateTerminalWidth({
     required int paneCharWidth,
     required double fontSize,
@@ -148,10 +148,10 @@ class FontCalculator {
     return paneCharWidth * charWidthRatio * fontSize;
   }
 
-  /// 指定されたフォントサイズでの正確な文字幅を測定
+  /// Measure exact character width for a specified font size
   ///
-  /// ヒンティングやピクセルアライメントによる非線形なスケーリングを考慮し、
-  /// 実際に使用するフォントサイズで測定を行う。
+  /// Accounts for non-linear scaling due to hinting and pixel alignment,
+  /// measuring at the actual font size that will be used.
   static double measureCharWidth(String fontFamily, double fontSize) {
     const testString = '0123456789';
     final painter = TextPainter(
@@ -165,22 +165,22 @@ class FontCalculator {
     return painter.width / testString.length;
   }
 
-  /// ターミナルのカラム位置（cursorX）をコードユニットオフセットに変換
+  /// Converts terminal column position (cursorX) to code unit offset
   ///
-  /// 全角文字（日本語、中国語、韓国語など）は2カラム分の幅を占めるため、
-  /// tmuxのcursor_x（カラム位置）と文字数は異なる。
-  /// この関数はカラム位置から正しいコードユニットオフセットを計算する。
+  /// Wide characters (Japanese, Chinese, Korean, etc.) occupy 2 columns each,
+  /// so tmux's cursor_x (column position) differs from character count.
+  /// This function calculates the correct code unit offset from a column position.
   ///
-  /// 絵文字の異体字セレクタ（VS16など）も考慮し、グラフィームクラスター
-  /// 単位での正確な変換を行う。
+  /// Also accounts for emoji variation selectors (VS16, etc.) and performs
+  /// conversion at the grapheme cluster level for accuracy.
   ///
-  /// 注意: BMP外の文字（絵文字等）はサロゲートペアとして2コードユニットを
-  /// 使用するため、runeカウントではなくコードユニットカウントを返す。
+  /// Note: Characters outside the BMP (emoji, etc.) use surrogate pairs
+  /// (2 code units), so we return code unit count, not rune count.
   ///
-  /// [text] 対象のテキスト
-  /// [columnPosition] ターミナルのカラム位置（0-based）
+  /// [text] Target text
+  /// [columnPosition] Terminal column position (0-based)
   ///
-  /// Returns: コードユニットオフセット（TextPositionに渡す値）
+  /// Returns: Code unit offset (value to pass to TextPosition)
   static int columnToCharOffset(String text, int columnPosition) {
     int currentColumn = 0;
     int codeUnitOffset = 0;
@@ -193,19 +193,19 @@ class FontCalculator {
       }
 
       final rune = runes[i];
-      // 次のコードポイントを先読み（VS16チェック用）
+      // Look ahead to next code point (for VS16 check)
       final nextRune = (i + 1 < runes.length) ? runes[i + 1] : null;
 
       final charWidth = getCharDisplayWidthWithContext(rune, nextRune);
       currentColumn += charWidth;
-      // BMP外の文字（U+10000以上）は2コードユニット、それ以外は1コードユニット
+      // Characters outside BMP (U+10000 or above) use 2 code units, others use 1
       codeUnitOffset += _runeCodeUnitCount(rune);
       i++;
     }
 
-    // 続く幅0の文字（VS16、結合文字など）をスキップ
-    // これらは前の文字と一緒に描画されるため、TextPositionとしては
-    // これらの後を指す必要がある
+    // Skip following zero-width characters (VS16, combining marks, etc.)
+    // These are drawn together with the preceding character, so TextPosition
+    // needs to point after these characters
     while (i < runes.length) {
       final rune = runes[i];
       final nextRune = (i + 1 < runes.length) ? runes[i + 1] : null;
@@ -219,45 +219,44 @@ class FontCalculator {
     return codeUnitOffset;
   }
 
-  /// runeのコードユニット数を取得
+  /// Get code unit count for a rune
   ///
-  /// BMP（Basic Multilingual Plane、U+0000〜U+FFFF）内の文字は1コードユニット、
-  /// BMP外の文字（U+10000以上、絵文字など）は2コードユニット（サロゲートペア）。
+  /// Characters in the BMP (Basic Multilingual Plane, U+0000–U+FFFF) use 1 code unit,
+  /// characters outside the BMP (U+10000 or above, emoji, etc.) use 2 code units (surrogate pair).
   static int _runeCodeUnitCount(int rune) {
     return rune > 0xFFFF ? 2 : 1;
   }
 
-  /// 文字のターミナル表示幅を取得（コンテキスト付き）
+  /// Get terminal display width for a character (with context)
   ///
-  /// 次のコードポイントがVS16（U+FE0F）の場合、絵文字スタイルとして
-  /// 幅2を返す。
+  /// If the next code point is VS16 (U+FE0F), returns width 2 for emoji style.
   static int getCharDisplayWidthWithContext(int codePoint, int? nextCodePoint) {
-    // 幅0の文字（結合文字、異体字セレクタなど）
+    // Zero-width characters (combining marks, variation selectors, etc.)
     if (_isZeroWidthChar(codePoint)) {
       return 0;
     }
 
-    // 次がVS16（絵文字スタイル）の場合、多くの文字が幅2になる
+    // If next is VS16 (emoji style), many characters become width 2
     if (nextCodePoint == 0xFE0F) {
-      // 既に幅2の文字はそのまま
+      // Characters already width 2 remain unchanged
       final baseWidth = getCharDisplayWidth(codePoint);
       if (baseWidth == 2) return 2;
-      // VS16付きで絵文字表示になる文字は幅2
+      // Characters that become emoji display with VS16 are width 2
       if (_canBeEmoji(codePoint)) return 2;
     }
 
     return getCharDisplayWidth(codePoint);
   }
 
-  /// 幅0の文字かどうか判定
+  /// Determine if a character is zero-width
   static bool _isZeroWidthChar(int codePoint) {
-    // 制御文字
+    // Control characters
     if (codePoint < 0x20) return true;
     if (codePoint >= 0x7F && codePoint < 0xA0) return true;
 
-    // 異体字セレクタ（Variation Selectors）
+    // Variation Selectors
     if (codePoint >= 0xFE00 && codePoint <= 0xFE0F) return true;
-    // 異体字セレクタ補助（Variation Selectors Supplement）
+    // Variation Selectors Supplement
     if (codePoint >= 0xE0100 && codePoint <= 0xE01EF) return true;
 
     // Zero Width Joiner / Non-Joiner
@@ -267,21 +266,21 @@ class FontCalculator {
     // Word Joiner
     if (codePoint == 0x2060) return true;
 
-    // 結合文字（Combining Diacritical Marks）
+    // Combining Diacritical Marks
     if (codePoint >= 0x0300 && codePoint <= 0x036F) return true;
-    // 結合文字拡張
+    // Combining Diacritical Marks Extended
     if (codePoint >= 0x1AB0 && codePoint <= 0x1AFF) return true;
     if (codePoint >= 0x1DC0 && codePoint <= 0x1DFF) return true;
     if (codePoint >= 0x20D0 && codePoint <= 0x20FF) return true;
     if (codePoint >= 0xFE20 && codePoint <= 0xFE2F) return true;
 
-    // Regional Indicator の肌色修飾子
+    // Skin tone modifiers for Regional Indicator
     if (codePoint >= 0x1F3FB && codePoint <= 0x1F3FF) return true;
 
     return false;
   }
 
-  /// VS16付きで絵文字表示になりうる文字か判定
+  /// Determine if a character can display as emoji with VS16
   static bool _canBeEmoji(int codePoint) {
     // Miscellaneous Symbols
     if (codePoint >= 0x2600 && codePoint <= 0x26FF) return true;
@@ -299,12 +298,12 @@ class FontCalculator {
     if (codePoint >= 0x1FA00 && codePoint <= 0x1FA6F) return true;
     // Symbols and Pictographs Extended-B
     if (codePoint >= 0x1FA70 && codePoint <= 0x1FAFF) return true;
-    // その他の絵文字になりうる記号
+    // Other symbols that can become emoji
     if (codePoint >= 0x2300 && codePoint <= 0x23FF) return true; // Misc Technical
     if (codePoint >= 0x2B50 && codePoint <= 0x2B55) return true; // Stars etc
-    // 数字キーキャップ用
+    // For digit keycap use
     if (codePoint >= 0x0023 && codePoint <= 0x0039) return true; // # 0-9
-    // その他のテキスト/絵文字両用記号
+    // Other text/emoji dual-use symbols
     if (codePoint == 0x00A9 || codePoint == 0x00AE) return true; // © ®
     if (codePoint == 0x2122) return true; // ™
     if (codePoint >= 0x2194 && codePoint <= 0x21AA) return true; // Arrows
@@ -356,51 +355,51 @@ class FontCalculator {
     return false;
   }
 
-  /// 文字のターミナル表示幅を取得（0, 1, または 2）
+  /// Get terminal display width for a character (0, 1, or 2)
   ///
-  /// Unicode East Asian Width プロパティに基づいて、
-  /// 全角文字は2、半角文字は1、結合文字等は0を返す。
+  /// Based on Unicode East Asian Width property:
+  /// wide characters return 2, normal characters return 1, combining characters etc. return 0.
   static int getCharDisplayWidth(int codePoint) {
-    // 幅0の文字
+    // Zero-width characters
     if (_isZeroWidthChar(codePoint)) {
       return 0;
     }
 
-    // 全角文字の判定（East Asian Width: F, W, A の一部）
-    // CJK統合漢字
+    // Wide character detection (East Asian Width: F, W, A partially)
+    // CJK Unified Ideographs
     if (codePoint >= 0x4E00 && codePoint <= 0x9FFF) return 2;
-    // CJK統合漢字拡張A
+    // CJK Unified Ideographs Extension A
     if (codePoint >= 0x3400 && codePoint <= 0x4DBF) return 2;
-    // CJK統合漢字拡張B-G
+    // CJK Unified Ideographs Extension B-G
     if (codePoint >= 0x20000 && codePoint <= 0x3FFFF) return 2;
-    // ひらがな
+    // Hiragana
     if (codePoint >= 0x3040 && codePoint <= 0x309F) return 2;
-    // カタカナ
+    // Katakana
     if (codePoint >= 0x30A0 && codePoint <= 0x30FF) return 2;
-    // 半角・全角形（全角部分）
+    // Halfwidth and Fullwidth Forms (fullwidth portion)
     if (codePoint >= 0xFF01 && codePoint <= 0xFF60) return 2;
     if (codePoint >= 0xFFE0 && codePoint <= 0xFFE6) return 2;
-    // 韓国語（ハングル音節）
+    // Korean (Hangul Syllables)
     if (codePoint >= 0xAC00 && codePoint <= 0xD7AF) return 2;
-    // 韓国語（ハングル字母）
+    // Korean (Hangul Jamo)
     if (codePoint >= 0x1100 && codePoint <= 0x11FF) return 2;
     if (codePoint >= 0x3130 && codePoint <= 0x318F) return 2;
-    // CJK記号・句読点
+    // CJK Symbols and Punctuation
     if (codePoint >= 0x3000 && codePoint <= 0x303F) return 2;
-    // CJK互換用文字
+    // CJK Compatibility
     if (codePoint >= 0x3300 && codePoint <= 0x33FF) return 2;
     if (codePoint >= 0xFE30 && codePoint <= 0xFE4F) return 2;
-    // 囲み文字
+    // Enclosed CJK Letters and Months
     if (codePoint >= 0x3200 && codePoint <= 0x32FF) return 2;
-    // 絵文字（一般的に2幅）
+    // Emoji (typically width 2)
     if (codePoint >= 0x1F300 && codePoint <= 0x1F9FF) return 2;
     if (codePoint >= 0x1FA00 && codePoint <= 0x1FAFF) return 2;
 
-    // その他は半角
+    // Everything else is normal width
     return 1;
   }
 
-  /// 指定フォントサイズで画面幅に収まる最大カラム数を計算
+  /// Calculate maximum number of columns that fit in screen width at specified font size
   static int calculateMaxCols({
     required double screenWidth,
     required double fontSize,
@@ -412,7 +411,7 @@ class FontCalculator {
     return (screenWidth / charWidth).floor().clamp(10, 999);
   }
 
-  /// 指定フォントサイズで画面高さに収まる最大行数を計算
+  /// Calculate maximum number of rows that fit in screen height at specified font size
   static int calculateMaxRows({
     required double screenHeight,
     required double fontSize,
@@ -424,9 +423,9 @@ class FontCalculator {
     return (screenHeight / lineHeight).floor().clamp(5, 999);
   }
 
-  /// テキストのターミナル表示幅（カラム数）を計算
+  /// Calculate terminal display width (in columns) for text
   ///
-  /// 異体字セレクタ（VS16等）を考慮した正確な幅計算を行う。
+  /// Performs accurate width calculation accounting for variation selectors (VS16, etc.).
   static int getTextDisplayWidth(String text) {
     int width = 0;
     final runes = text.runes.toList();

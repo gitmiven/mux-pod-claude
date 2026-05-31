@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
-/// SSH接続をバックグラウンドで維持するためのForeground Serviceを管理
+/// Manages the Foreground Service to maintain SSH connections in the background
 class SshForegroundTaskService {
   static final SshForegroundTaskService _instance =
       SshForegroundTaskService._internal();
@@ -13,13 +13,13 @@ class SshForegroundTaskService {
   bool _isRunning = false;
   String? _currentConnectionName;
 
-  /// サービスが実行中かどうか
+  /// Whether the service is running
   bool get isRunning => _isRunning;
 
-  /// 現在接続中の接続名
+  /// The name of the currently connected connection
   String? get currentConnectionName => _currentConnectionName;
 
-  /// Foreground Taskを初期化
+  /// Initialize the Foreground Task
   Future<void> initialize() async {
     if (_isInitialized) return;
     if (!Platform.isAndroid) {
@@ -53,18 +53,18 @@ class SshForegroundTaskService {
     _isInitialized = true;
   }
 
-  /// 通知権限を要求
+  /// Request notification permissions
   Future<bool> requestPermissions() async {
     if (!Platform.isAndroid) return true;
 
-    // Android 13以降は通知権限が必要
+    // Android 13 and later require notification permission
     final notificationPermission =
         await FlutterForegroundTask.checkNotificationPermission();
     if (notificationPermission != NotificationPermission.granted) {
       await FlutterForegroundTask.requestNotificationPermission();
     }
 
-    // バッテリー最適化の除外をリクエスト（オプション）
+    // Request exemption from battery optimization (optional)
     final batteryOptimization =
         await FlutterForegroundTask.isIgnoringBatteryOptimizations;
     if (!batteryOptimization) {
@@ -75,7 +75,7 @@ class SshForegroundTaskService {
         NotificationPermission.granted;
   }
 
-  /// SSH接続時にForeground Serviceを開始
+  /// Start the Foreground Service when connecting via SSH
   Future<bool> startService({
     required String connectionName,
     required String host,
@@ -102,7 +102,7 @@ class SshForegroundTaskService {
     return _isRunning;
   }
 
-  /// 通知テキストを更新
+  /// Update notification text
   Future<void> updateNotification({
     String? title,
     String? text,
@@ -115,7 +115,7 @@ class SshForegroundTaskService {
     );
   }
 
-  /// SSH切断時にForeground Serviceを停止
+  /// Stop the Foreground Service when disconnecting from SSH
   Future<void> stopService() async {
     if (!Platform.isAndroid || !_isRunning) return;
 
@@ -124,7 +124,7 @@ class SshForegroundTaskService {
     _currentConnectionName = null;
   }
 
-  /// サービスが実行可能か確認
+  /// Check if the service can be started
   Future<bool> canStartService() async {
     if (!Platform.isAndroid) return false;
 
@@ -134,44 +134,44 @@ class SshForegroundTaskService {
   }
 }
 
-/// Foreground Task開始時のコールバック（必須だが、SSH接続はメインisolateで管理）
+/// Callback when Foreground Task starts (required, but SSH connections are managed in the main isolate)
 @pragma('vm:entry-point')
 void _startCallback() {
   FlutterForegroundTask.setTaskHandler(_SshTaskHandler());
 }
 
-/// SSH接続維持用のTaskHandler
+/// TaskHandler for maintaining SSH connections
 class _SshTaskHandler extends TaskHandler {
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
-    // SSH接続はメインisolateで管理されるため、ここでは何もしない
-    // このHandlerはForeground Serviceを維持するためだけに存在
+    // SSH connections are managed in the main isolate, so do nothing here
+    // This Handler exists only to maintain the Foreground Service
   }
 
   @override
   void onRepeatEvent(DateTime timestamp) {
-    // 定期実行イベント（使用しない）
+    // Periodic execution event (not used)
   }
 
   @override
   Future<void> onDestroy(DateTime timestamp) async {
-    // サービス終了時の処理（必要に応じてクリーンアップ）
+    // Service termination processing (cleanup as needed)
   }
 
   @override
   void onNotificationButtonPressed(String id) {
-    // 通知ボタンがタップされた時（使用しない）
+    // When notification button is tapped (not used)
   }
 
   @override
   void onNotificationPressed() {
-    // 通知がタップされた時 - アプリを前面に持ってくる
+    // When notification is tapped - bring the app to the foreground
     FlutterForegroundTask.launchApp();
   }
 
   @override
   void onNotificationDismissed() {
-    // 通知がスワイプで削除された時
+    // When notification is dismissed by swiping
   }
 }
 

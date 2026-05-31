@@ -1,31 +1,31 @@
-/// キーオーバーレイのカテゴリ
+/// Key overlay category
 enum KeyOverlayCategory {
-  /// 修飾キー組み合わせ: Ctrl+x, Alt+x, Shift+x
+  /// Modifier key combinations: Ctrl+x, Alt+x, Shift+x
   modifier,
 
-  /// 単独特殊キー: ESC, TAB, ENTER, S-Enter, BSpace, BTab
+  /// Standalone special keys: ESC, TAB, ENTER, S-Enter, BSpace, BTab
   special,
 
-  /// 矢印キー: Up, Down, Left, Right
+  /// Arrow keys: Up, Down, Left, Right
   arrow,
 
-  /// ショートカットキー: /, -, 1, 2, 3, 4
+  /// Shortcut keys: /, -, 1, 2, 3, 4
   shortcut,
 }
 
-/// キーオーバーレイの表示位置
+/// Key overlay display position
 enum KeyOverlayPosition {
-  /// キーボード（SpecialKeysBar）の真上
+  /// Directly above the keyboard (SpecialKeysBar)
   aboveKeyboard,
 
-  /// ターミナル領域の中央
+  /// Center of the terminal area
   center,
 
-  /// ブレッドクラムヘッダーの直下
+  /// Directly below the breadcrumb header
   belowHeader,
 }
 
-/// tmux send-keys 形式のキー名を人間可読表示に変換するユーティリティ
+/// Utility to convert tmux send-keys format key names to human-readable display
 class TmuxKeyDisplay {
   static const _specialKeys = {
     'Escape', 'Tab', 'Enter', 'BSpace', 'BTab', 'S-Enter',
@@ -50,9 +50,9 @@ class TmuxKeyDisplay {
 
   static final _modifierPattern = RegExp(r'^([CMS]-)+');
 
-  /// tmuxキー名からオーバーレイカテゴリを判定
+  /// Determine overlay category from tmux key name
   ///
-  /// 該当しない場合は null を返す
+  /// Returns null if no match is found
   static KeyOverlayCategory? categoryOf(String tmuxKey) {
     if (_specialKeys.contains(tmuxKey)) return KeyOverlayCategory.special;
     if (_arrowKeys.contains(tmuxKey)) return KeyOverlayCategory.arrow;
@@ -61,16 +61,16 @@ class TmuxKeyDisplay {
     return null;
   }
 
-  /// リテラルキーがショートカットキーに該当するか判定
+  /// Determine if a literal key matches a shortcut key
   static bool isShortcutKey(String key) => _shortcutKeys.contains(key);
 
-  /// tmux形式のキー名を人間可読テキストに変換
+  /// Convert tmux format key names to human-readable text
   static String displayText(String tmuxKey) {
-    // 固定マッピング
+    // Fixed mapping
     final mapped = _displayMap[tmuxKey];
     if (mapped != null) return mapped;
 
-    // 修飾キーパターン: C-c → Ctrl+C, M-x → Alt+X, S-a → Shift+A
+    // Modifier key pattern: C-c → Ctrl+C, M-x → Alt+X, S-a → Shift+A
     final match = _modifierPattern.firstMatch(tmuxKey);
     if (match != null) {
       final prefix = match.group(0)!;
@@ -84,7 +84,7 @@ class TmuxKeyDisplay {
       return parts.join('+');
     }
 
-    // そのまま返す（/, -, 1-4 等のリテラルキー）
+    // Return as-is (literal keys such as /, -, 1-4)
     return tmuxKey;
   }
 }

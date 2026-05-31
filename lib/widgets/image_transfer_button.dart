@@ -4,10 +4,10 @@ import 'package:image_picker/image_picker.dart';
 
 import '../providers/image_transfer_provider.dart';
 
-/// 画像転送ボタン
+/// Image transfer button
 ///
-/// SpecialKeysBar の横に配置される36x36のアイコンボタン。
-/// タップでギャラリー/カメラ選択のBottomSheetを表示する。
+/// A 36x36 icon button positioned to the right of SpecialKeysBar.
+/// Displays a bottom sheet for selecting gallery or camera on tap.
 class ImageTransferButton extends ConsumerWidget {
   final VoidCallback? onTransferComplete;
 

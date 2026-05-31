@@ -310,11 +310,11 @@ void main() {
       });
 
       test('calculates width for Japanese text', () {
-        expect(FontCalculator.getTextDisplayWidth('あいうえお'), equals(10));
+        expect(FontCalculator.getTextDisplayWidth('あいうえお'), equals(10)); // hiragana a-i-u-e-o = 10
       });
 
       test('calculates width for mixed text', () {
-        // 'aあb' = 1 + 2 + 1 = 4
+        // mixed ASCII and Japanese: a + hiragana a + b = 1 + 2 + 1 = 4
         expect(FontCalculator.getTextDisplayWidth('aあb'), equals(4));
       });
 
@@ -324,12 +324,12 @@ void main() {
       });
 
       test('calculates width for complex emoji text', () {
-        // ＊✡️💩aaあいうえお
-        // ＊ (U+FF0A) = 2
-        // ✡️ (U+2721 + U+FE0F) = 2 + 0 = 2
-        // 💩 (U+1F4A9) = 2
-        // aa = 2
-        // あいうえお = 10
+        // complex text with fullwidth, emoji, ASCII, and Japanese
+        // ＊ (U+FF0A, fullwidth asterisk) = 2
+        // ✡️ (U+2721 + U+FE0F, star-of-David emoji) = 2 + 0 = 2
+        // 💩 (U+1F4A9, poop emoji) = 2
+        // aa (ASCII) = 2
+        // hiragana a-i-u-e-o = 10
         // Total = 2 + 2 + 2 + 2 + 10 = 18
         expect(FontCalculator.getTextDisplayWidth('＊✡️💩aaあいうえお'), equals(18));
       });
@@ -352,11 +352,11 @@ void main() {
         const text = 'あいう'; // Each character is 2 columns, 1 code unit each
         // Column 0 -> code unit 0
         expect(FontCalculator.columnToCharOffset(text, 0), equals(0));
-        // Column 2 -> code unit 1 (after 'あ')
+        // Column 2 -> code unit 1 (after hiragana a)
         expect(FontCalculator.columnToCharOffset(text, 2), equals(1));
-        // Column 4 -> code unit 2 (after 'い')
+        // Column 4 -> code unit 2 (after hiragana i)
         expect(FontCalculator.columnToCharOffset(text, 4), equals(2));
-        // Column 6 -> code unit 3 (after 'う')
+        // Column 6 -> code unit 3 (after hiragana u)
         expect(FontCalculator.columnToCharOffset(text, 6), equals(3));
       });
 
@@ -366,7 +366,7 @@ void main() {
         expect(FontCalculator.columnToCharOffset(text, 0), equals(0));
         // Column 1 -> code unit 1 (after 'a')
         expect(FontCalculator.columnToCharOffset(text, 1), equals(1));
-        // Column 3 -> code unit 2 (after 'あ')
+        // Column 3 -> code unit 2 (after hiragana a)
         expect(FontCalculator.columnToCharOffset(text, 3), equals(2));
         // Column 4 -> code unit 3 (after 'b')
         expect(FontCalculator.columnToCharOffset(text, 4), equals(3));
@@ -407,11 +407,11 @@ void main() {
         // 💩 (U+1F4A9): 2 code units, 2 columns -> cu 3-4
         // a: 1 code unit, 1 column -> cu 5
         // a: 1 code unit, 1 column -> cu 6
-        // あ: 1 code unit, 2 columns -> cu 7
-        // い: 1 code unit, 2 columns -> cu 8
-        // う: 1 code unit, 2 columns -> cu 9
-        // え: 1 code unit, 2 columns -> cu 10
-        // お: 1 code unit, 2 columns -> cu 11
+        // a (hiragana a): 1 code unit, 2 columns -> cu 7
+        // i (hiragana i): 1 code unit, 2 columns -> cu 8
+        // u (hiragana u): 1 code unit, 2 columns -> cu 9
+        // e (hiragana e): 1 code unit, 2 columns -> cu 10
+        // o (hiragana o): 1 code unit, 2 columns -> cu 11
 
         expect(FontCalculator.columnToCharOffset(text, 0), equals(0));  // Start
         expect(FontCalculator.columnToCharOffset(text, 2), equals(1));  // After ＊, start of ✡

@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image/image.dart' as img;
 
-/// 画像出力フォーマット
+/// Image output format
 enum ImageOutputFormat {
   original,
   png,
@@ -22,7 +22,7 @@ enum ImageOutputFormat {
   }
 }
 
-/// 画像変換結果
+/// Image conversion result
 class ImageConvertResult {
   final Uint8List bytes;
   final String extension;
@@ -30,19 +30,19 @@ class ImageConvertResult {
   const ImageConvertResult({required this.bytes, required this.extension});
 }
 
-/// 画像フォーマット変換 + リサイズサービス
+/// Image format conversion + resize service
 ///
-/// `image` パッケージを使用し、Isolate でバックグラウンド実行する。
-/// HEIC/HEIF は `flutter_image_compress` でネイティブAPI経由でJPEGに事前変換する。
+/// Uses the `image` package and runs in background via Isolate.
+/// HEIC/HEIF images are pre-converted to JPEG via native API using `flutter_image_compress`.
 class ImageConverter {
-  /// 画像のフォーマット変換とリサイズを行う
+  /// Converts image format and resizes the image
   ///
-  /// [bytes] 元の画像バイトデータ
-  /// [format] 出力フォーマット（original/png/jpeg）
-  /// [jpegQuality] JPEG品質（1-100）
-  /// [autoResize] リサイズを行うか
-  /// [maxWidth] 最大幅（0 = 無制限）
-  /// [maxHeight] 最大高さ（0 = 無制限）
+  /// [bytes] original image byte data
+  /// [format] output format (original/png/jpeg)
+  /// [jpegQuality] JPEG quality (1-100)
+  /// [autoResize] whether to resize
+  /// [maxWidth] maximum width (0 = unlimited)
+  /// [maxHeight] maximum height (0 = unlimited)
   static Future<ImageConvertResult> convert({
     required Uint8List bytes,
     required ImageOutputFormat format,
@@ -53,7 +53,7 @@ class ImageConverter {
   }) async {
     final detectedExt = detectExtension(bytes);
 
-    // HEIC/HEIF はネイティブAPIでJPEGに事前変換
+    // HEIC/HEIF images are pre-converted to JPEG via native API
     Uint8List processedBytes = bytes;
     String effectiveExt = detectedExt;
     if (detectedExt == 'heic') {
@@ -62,7 +62,7 @@ class ImageConverter {
       effectiveExt = converted.extension;
     }
 
-    // 変換不要の場合はそのまま返す
+    // Return as-is if no conversion is needed
     if (format == ImageOutputFormat.original && !autoResize) {
       return ImageConvertResult(
         bytes: processedBytes,
@@ -70,7 +70,7 @@ class ImageConverter {
       );
     }
 
-    // Isolate でバックグラウンド実行（UIスレッドブロック防止）
+    // Run in background via Isolate (to prevent UI thread blocking)
     return await Isolate.run(() => _processImage(
           bytes: processedBytes,
           format: format,
@@ -82,7 +82,7 @@ class ImageConverter {
         ));
   }
 
-  /// HEIC/HEIF をネイティブAPIでJPEGに変換
+  /// Convert HEIC/HEIF to JPEG via native API
   static Future<ImageConvertResult> _preProcessHeic(Uint8List bytes) async {
     try {
       final result = await FlutterImageCompress.compressWithList(
@@ -103,7 +103,7 @@ class ImageConverter {
     }
   }
 
-  /// Isolate 内で実行される画像処理
+  /// Image processing executed within Isolate
   static ImageConvertResult _processImage({
     required Uint8List bytes,
     required ImageOutputFormat format,
@@ -120,12 +120,12 @@ class ImageConverter {
 
     var processed = image;
 
-    // リサイズ
+    // Resize
     if (autoResize) {
       final needsResize = (maxWidth > 0 && processed.width > maxWidth) ||
           (maxHeight > 0 && processed.height > maxHeight);
       if (needsResize) {
-        // アスペクト比を維持してリサイズ
+        // Resize while maintaining aspect ratio
         final widthRatio = maxWidth > 0 ? processed.width / maxWidth : 0.0;
         final heightRatio = maxHeight > 0 ? processed.height / maxHeight : 0.0;
         final ratio = widthRatio > heightRatio ? widthRatio : heightRatio;
@@ -139,7 +139,7 @@ class ImageConverter {
       }
     }
 
-    // フォーマット変換
+    // Format conversion
     switch (format) {
       case ImageOutputFormat.png:
         return ImageConvertResult(
@@ -152,7 +152,7 @@ class ImageConverter {
           extension: 'jpg',
         );
       case ImageOutputFormat.original:
-        // リサイズのみ（元フォーマットで再エンコード）
+        // Resize only (re-encode with original format)
         final ext = sourceExtension;
         if (ext == 'jpg' || ext == 'jpeg') {
           return ImageConvertResult(
@@ -167,7 +167,7 @@ class ImageConverter {
     }
   }
 
-  /// バイトデータのマジックバイトからファイルフォーマットを検出
+  /// Detect file format from magic bytes in byte data
   static String detectExtension(Uint8List bytes) {
     if (bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
       return 'jpg';
@@ -186,6 +186,6 @@ class ImageConverter {
         return 'heic';
       }
     }
-    return 'png'; // デフォルト
+    return 'png'; // default
   }
 }

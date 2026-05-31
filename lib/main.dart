@@ -14,10 +14,10 @@ import 'package:flutter_muxpod/theme/app_theme.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // フォントライセンスを登録
+  // Register font licenses
   LicenseService.registerLicenses();
 
-  // ステータスバーを透明に
+  // Make status bar transparent
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
@@ -50,12 +50,12 @@ class _MyAppState extends ConsumerState<MyApp> {
   }
 
   Future<void> _initDeepLinks() async {
-    // ホットリンクの監視は初期化の成否に関わらず設定
+    // Monitor hot links regardless of initialization success
     _linkSubscription = _deepLinkService.linkStream.listen(_handleDeepLink);
 
     await _deepLinkService.initialize();
 
-    // コールドスタートの初期リンクは接続データロード後に処理
+    // Handle cold start initial link after connection data is loaded
     if (_deepLinkService.initialLink != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _waitForConnectionsAndHandleInitialLink();
@@ -66,14 +66,14 @@ class _MyAppState extends ConsumerState<MyApp> {
   Future<void> _waitForConnectionsAndHandleInitialLink() async {
     if (_initialLinkHandled) return;
 
-    // 接続データがロードされるまで待つ（最大3秒）
+    // Wait until connection data is loaded (max 3 seconds)
     for (int i = 0; i < 30; i++) {
       final state = ref.read(connectionsProvider);
       if (!state.isLoading) break;
       await Future.delayed(const Duration(milliseconds: 100));
     }
 
-    // ナビゲーターが準備完了するまで待つ（最大1秒）
+    // Wait until navigator is ready (max 1 second)
     for (int i = 0; i < 10; i++) {
       if (_navigatorKey.currentState != null) break;
       await Future.delayed(const Duration(milliseconds: 100));
@@ -105,11 +105,11 @@ class _MyAppState extends ConsumerState<MyApp> {
       return;
     }
 
-    // まず既存ルートをホームまで戻す
+    // First, pop existing routes back to home
     navigator.popUntil((route) => route.isFirst);
 
-    // 次フレームでpushする（popUntilによるTerminalScreen.dispose()が
-    // 完了してからでないとref.readが_elements assertionで失敗する）
+    // Push in next frame (must wait for popUntil's TerminalScreen.dispose()
+    // to complete, otherwise ref.read fails with _elements assertion)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final nav = _navigatorKey.currentState;
       if (nav == null) return;

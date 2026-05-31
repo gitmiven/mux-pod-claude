@@ -58,13 +58,13 @@ void main() {
         for (var i = 0; i < 10; i++) {
           results.add(SftpService.generateFilename('test', 'png'));
         }
-        // UUID短縮4桁が含まれるため、高確率で一意
+        // Likely to be unique due to 4-digit shortened UUID
         expect(results.length, greaterThan(1));
       });
 
       test('タイムスタンプ部分がYYYYMMDD_HHMMSS形式である', () {
         final result = SftpService.generateFilename('img_', 'png');
-        // img_YYYYMMDD_HHMMSS_xxxx.png の形式
+        // Format: img_YYYYMMDD_HHMMSS_xxxx.png
         final regex = RegExp(r'^img_\d{8}_\d{6}_[a-f0-9]{4}\.png$');
         expect(regex.hasMatch(result), isTrue);
       });

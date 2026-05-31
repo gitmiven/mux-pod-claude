@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/design_colors.dart';
 
-/// パスバー（Breadcrumb）
+/// Path bar (Breadcrumb)
 ///
-/// 現在のパスをセグメントとして表示し、各セグメントをタップして
-/// そのディレクトリにジャンプできる。長押しで直接パス入力モード。
+/// Displays the current path as segments, tap each segment to
+/// jump to that directory. Long press for direct path input mode.
 class PathBar extends StatefulWidget {
   final String currentPath;
   final ValueChanged<String> onPathSelected;

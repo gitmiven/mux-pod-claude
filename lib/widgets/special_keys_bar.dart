@@ -4,27 +4,27 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/design_colors.dart';
 
-/// 特殊キーバー（HTMLデザイン仕様準拠）
+/// Special keys bar (HTML design specification compliant)
 ///
-/// tmuxコマンド方式でキーを送信するため、
-/// tmux send-keys形式のキー名を使用する。
+/// To send keys in tmux command format,
+/// uses key names in tmux send-keys format.
 class SpecialKeysBar extends StatefulWidget {
-  /// リテラルキー送信（通常の文字）
+  /// Literal key transmission (regular characters)
   final void Function(String key) onKeyPressed;
 
-  /// 特殊キー送信（tmux形式: Enter, Escape, C-c等）
+  /// Special key transmission (tmux format: Enter, Escape, C-c, etc.)
   final void Function(String tmuxKey) onSpecialKeyPressed;
 
   final VoidCallback? onInputTap;
   final bool hapticFeedback;
 
-  /// DirectInputモードが有効か
+  /// Whether DirectInput mode is enabled
   final bool directInputEnabled;
 
-  /// DirectInputモードのトグルコールバック
+  /// Callback to toggle DirectInput mode
   final VoidCallback? onDirectInputToggle;
 
-  /// 画像転送ボタンが押された時のコールバック
+  /// Callback when image transfer button is pressed
   final VoidCallback? onImagePickRequested;
 
   const SpecialKeysBar({
@@ -49,25 +49,25 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
   final TextEditingController _directInputController = TextEditingController();
   final FocusNode _directInputFocusNode = FocusNode();
 
-  /// 現在IME変換中かどうか
+  /// Whether IME composition is currently active
   bool _isComposing = false;
 
-  /// IME composing中の最新テキスト（iOS重複検出用）
-  /// iOSが自動確定時にcomposingテキストより長い確定テキストを返す場合、
-  /// composingテキストを正とし余分な重複を除去する
+  /// Latest text during IME composing (for iOS duplicate detection)
+  /// When iOS returns committed text longer than composing text during auto-commit,
+  /// treat composing text as canonical and remove extra duplicates
   String? _lastComposingText;
 
-  /// DirectInputモードでBackspace検出のためのsentinel文字（ゼロ幅スペース）
-  /// iOS/iPadOSではTextField空の状態でBackspace押下時にKeyDownEventが
-  /// 生成されないため、常にsentinelを保持して削除検出でBackspaceを検知する
+  /// Sentinel character for Backspace detection in DirectInput mode (zero-width space)
+  /// iOS/iPadOS does not generate KeyDownEvent when Backspace is pressed with empty TextField,
+  /// so we always maintain the sentinel and detect Backspace via deletion detection
   static const String _sentinel = '\u200B';
 
-  /// sentinel リセット中の再入防止フラグ
+  /// Re-entry prevention flag during sentinel reset
   bool _isResettingController = false;
 
-  /// 二重入力防止: _handleKeyEventで処理した最終時刻
-  /// iPad外付けキーボードではFlutter KeyEventとiOSテキスト入力が
-  /// 同一キーを二重に処理するため、タイムスタンプで抑制する
+  /// Duplicate input prevention: timestamp of last key event processed by _handleKeyEvent
+  /// iPad external keyboard generates both Flutter KeyEvent and iOS text input
+  /// which process the same key twice, so we suppress via timestamp
   DateTime? _lastKeyEventHandledAt;
 
   @override
@@ -102,15 +102,15 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     super.dispose();
   }
 
-  /// DirectInput: テキスト変更時の処理
-  /// sentinelアプローチでBackspaceを検出（iOS/iPadOS対応）
+  /// DirectInput: handling text changes
+  /// Detects Backspace using sentinel approach (iOS/iPadOS compatible)
   void _onDirectInputChanged() {
     if (_isResettingController) return;
 
     final text = _directInputController.text;
     final value = _directInputController.value;
 
-    // composingが空でない = IME変換中
+    // composing is not empty = IME conversion in progress
     _isComposing = value.composing.isValid && !value.composing.isCollapsed;
 
     if (_isComposing) {
@@ -151,7 +151,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
       return;
     }
 
-    // Sentinelが削除された = Backspaceが押された（iOS/iPadOS対応）
+    // Sentinel deleted = Backspace pressed (iOS/iPadOS compatible)
     if (text.isEmpty) {
       _lastComposingText = null;
       _sendDirectBackspace();
@@ -159,20 +159,20 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
       return;
     }
 
-    // Sentinelを除去して実際の入力テキストを取得
+    // Remove sentinel and get actual input text
     final actualText = text.replaceAll(_sentinel, '');
 
-    // 実際のテキストがあれば送信
+    // Send if actual text exists
     if (actualText.isNotEmpty) {
-      // 外付けキーボードの二重入力防止: _handleKeyEventで処理済みならスキップ
+      // Duplicate input prevention for external keyboard: skip if already processed by _handleKeyEvent
       if (_isRecentKeyEventHandled()) {
         _lastComposingText = null;
         _resetToSentinel();
         return;
       }
 
-      // iOS重複検出: 確定テキストがcomposingテキストより長く、
-      // composingテキストで始まる場合、iOSの重複挿入とみなしcomposingテキストを使用
+      // iOS duplicate detection: if committed text is longer than composing text
+      // and starts with composing text, treat as iOS duplicate insertion and use composing text
       String textToSend = actualText;
       if (_lastComposingText != null &&
           actualText.length > _lastComposingText!.length &&
@@ -205,14 +205,14 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
         widget.onKeyPressed(textToSend);
       }
 
-      // 送信後にsentinelにリセット
+      // Reset to sentinel after sending
       _resetToSentinel();
     }
   }
 
-  /// DirectInput: ソフトウェアキーボードのEnter（送信）で呼ばれる
+  /// DirectInput: called when software keyboard Enter (submit) is pressed
   void _onDirectInputSubmitted(String value) {
-    // 外付けキーボードの二重入力防止: _handleKeyEventで処理済みならスキップ
+    // Duplicate input prevention for external keyboard: skip if already processed by _handleKeyEvent
     if (_isRecentKeyEventHandled()) return;
 
     if (widget.hapticFeedback) {
@@ -222,7 +222,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     _resetToSentinel();
   }
 
-  /// DirectInput: Backspaceキー送信
+  /// DirectInput: send Backspace key
   void _sendDirectBackspace() {
     if (widget.hapticFeedback) {
       HapticFeedback.lightImpact();
@@ -230,11 +230,11 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     widget.onSpecialKeyPressed('BSpace');
   }
 
-  /// DirectInput: sentinelにリセット（Backspace検出用）
+  /// DirectInput: reset to sentinel (for Backspace detection)
   ///
-  /// _isResettingControllerの解除を次フレームまで遅延することで、
-  /// iOSプラットフォームがIME確定時に送る遅延テキスト更新を吸収する。
-  /// PostFrameCallbackでcontrollerが上書きされていれば再度sentinelにリセットする。
+  /// Defer _isResettingController release to next frame to absorb
+  /// delayed text updates sent by iOS when IME commits.
+  /// If controller is overwritten in PostFrameCallback, reset to sentinel again.
   void _resetToSentinel() {
     _isResettingController = true;
     _directInputController.value = TextEditingValue(
@@ -246,7 +246,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
       final currentValue = _directInputController.value;
       final hasActiveComposing = currentValue.composing.isValid &&
           !currentValue.composing.isCollapsed;
-      // composing進行中ならiOSの入力を尊重して再リセットしない
+      // If composing is in progress, respect iOS input and don't reset again
       if (!hasActiveComposing && _directInputController.text != _sentinel) {
         _directInputController.value = TextEditingValue(
           text: _sentinel,
@@ -257,26 +257,26 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     });
   }
 
-  /// 二重入力防止: _handleKeyEventで処理したことをマーク
+  /// Duplicate input prevention: mark as processed by _handleKeyEvent
   void _markKeyEventHandled() {
     _lastKeyEventHandledAt = DateTime.now();
   }
 
-  /// 二重入力防止: 直近100ms以内に_handleKeyEventで処理されたか
+  /// Duplicate input prevention: check if processed by _handleKeyEvent within last 100ms
   bool _isRecentKeyEventHandled() {
     if (_lastKeyEventHandledAt == null) return false;
     return DateTime.now().difference(_lastKeyEventHandledAt!) <
         const Duration(milliseconds: 100);
   }
 
-  /// 外付けキーボードの修飾子を検出してtmux形式キー名に変換
+  /// Detect external keyboard modifiers and convert to tmux format key name
   String _applyHardwareModifiers(String baseKey) {
     final isShift = HardwareKeyboard.instance.isShiftPressed;
     final isCtrl = HardwareKeyboard.instance.isControlPressed ||
         HardwareKeyboard.instance.isMetaPressed;
     final isAlt = HardwareKeyboard.instance.isAltPressed;
 
-    // 特殊ケース: Shift+Tab → BTab
+    // Special case: Shift+Tab → BTab
     if (isShift && baseKey == 'Tab') return 'BTab';
 
     final mods = <String>[];
@@ -287,7 +287,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     return '${mods.join('-')}-$baseKey';
   }
 
-  /// 外付けキーボード → tmuxキー名マッピング
+  /// External keyboard → tmux key name mapping
   static final _hwSpecialKeyMap = <LogicalKeyboardKey, String>{
     LogicalKeyboardKey.escape: 'Escape',
     LogicalKeyboardKey.tab: 'Tab',
@@ -314,18 +314,18 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     LogicalKeyboardKey.f12: 'F12',
   };
 
-  /// 外付けキーボード用の特殊キー送信（デバウンス付き）
+  /// Send special key for external keyboard (with debounce)
   void _sendHwSpecialKey(String baseKey) {
     _markKeyEventHandled();
     if (widget.hapticFeedback) {
       HapticFeedback.lightImpact();
     }
     widget.onSpecialKeyPressed(_applyHardwareModifiers(baseKey));
-    // 外付けキーボード使用時はソフトウェア修飾子トグルをリセット
+    // Reset software modifier toggle when using external keyboard
     _resetSoftwareModifiers();
   }
 
-  /// ソフトウェア修飾子ボタンの状態をリセット
+  /// Reset software modifier button states
   void _resetSoftwareModifiers() {
     if (_shiftPressed || _ctrlPressed || _altPressed) {
       setState(() {
@@ -336,20 +336,20 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     }
   }
 
-  /// キーイベントハンドラ（外付けキーボード用: 全特殊キーをキャプチャ）
+  /// Key event handler (for external keyboard: captures all special keys)
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
     }
 
-    // IME変換中はキーイベントを処理しない
+    // Don't process key events during IME conversion
     if (_isComposing) {
       return KeyEventResult.ignored;
     }
 
     final key = event.logicalKey;
 
-    // Ctrl/Meta + A-Z のショートカット処理
+    // Ctrl/Meta + A-Z shortcut handling
     final isCtrlPressed = HardwareKeyboard.instance.isControlPressed ||
         HardwareKeyboard.instance.isMetaPressed;
     if (isCtrlPressed) {
@@ -365,7 +365,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
       }
     }
 
-    // Enterキー
+    // Enter key
     if (key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.numpadEnter) {
       _markKeyEventHandled();
@@ -374,12 +374,12 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
       return KeyEventResult.handled;
     }
 
-    // Backspaceキー: sentinelアプローチで_onDirectInputChangedにて処理
+    // Backspace key: handled in _onDirectInputChanged via sentinel approach
     if (key == LogicalKeyboardKey.backspace) {
       return KeyEventResult.ignored;
     }
 
-    // マップに登録された特殊キー（Escape/Tab/矢印/Nav/F1-F12）
+    // Special keys registered in map (Escape/Tab/arrows/Nav/F1-F12)
     final tmuxKey = _hwSpecialKeyMap[key];
     if (tmuxKey != null) {
       _sendHwSpecialKey(tmuxKey);
@@ -389,7 +389,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     return KeyEventResult.ignored;
   }
 
-  /// DirectInput: Enterキー送信して入力欄をリセット
+  /// DirectInput: send Enter key and reset input field
   void _sendDirectEnterAndClear() {
     if (widget.hapticFeedback) {
       HapticFeedback.lightImpact();
@@ -424,7 +424,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     );
   }
 
-  /// 上部の修飾キー行（ESC, TAB, CTRL, ALT, SHIFT, ENTER, S-RET, /, -）
+  /// Top modifier key row (ESC, TAB, CTRL, ALT, SHIFT, ENTER, S-RET, /, -)
   Widget _buildModifierKeysRow() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
@@ -452,7 +452,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     );
   }
 
-  /// Shift+Enterキーボタン（Claude CodeのAcceptEdits等用）
+  /// Shift+Enter key button (for Claude Code AcceptEdits, etc.)
   Widget _buildShiftEnterKeyButton() {
     return Expanded(
       child: GestureDetector(
@@ -494,7 +494,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     );
   }
 
-  /// ENTERキーボタン（単体でEnterを送信）
+  /// ENTER key button (sends Enter alone)
   Widget _buildEnterKeyButton() {
     return Expanded(
       child: GestureDetector(
@@ -547,13 +547,13 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     );
   }
 
-  /// 下部の矢印キー + Inputボタン行
+  /// Bottom arrow keys + Input button row
   Widget _buildArrowKeysRow() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         children: [
-          // 矢印キー横並び: 左・上・下・右
+          // Arrow keys side by side: left, up, down, right
           _buildArrowButton(Icons.arrow_left, 'Left'),
           const SizedBox(width: 2),
           _buildArrowButton(Icons.arrow_drop_up, 'Up'),
@@ -562,14 +562,14 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
           const SizedBox(width: 2),
           _buildArrowButton(Icons.arrow_right, 'Right'),
           const SizedBox(width: 8),
-          // 画像転送ボタン
+          // Image transfer button
           if (widget.onImagePickRequested != null) ...[
             _buildImageTransferButton(),
             const SizedBox(width: 2),
           ],
-          // DirectInputモードトグルボタン
+          // DirectInput mode toggle button
           _buildDirectInputToggle(),
-          // DirectInput有効時: 数字キー(1-4)を右寄せで表示
+          // When DirectInput is enabled: display number keys (1-4) right-aligned
           if (widget.directInputEnabled) ...[
             const Spacer(),
             _buildNumberKeyButton('1'),
@@ -580,7 +580,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
             const SizedBox(width: 2),
             _buildNumberKeyButton('4'),
           ],
-          // DirectInput無効時: Inputボタンを表示
+          // When DirectInput is disabled: display Input button
           if (!widget.directInputEnabled) ...[
             const SizedBox(width: 4),
             Expanded(child: _buildInputButton()),
@@ -590,8 +590,8 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     );
   }
 
-  /// DirectInput専用行（入力フィールドのみ）
-  /// RET/BSはネイティブキーボードのものを使用
+  /// DirectInput-only row (input field only)
+  /// RET/BS use native keyboard version
   Widget _buildDirectInputRow() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
@@ -599,7 +599,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     );
   }
 
-  /// DirectInputモードのトグルボタン
+  /// Toggle button for DirectInput mode
   Widget _buildDirectInputToggle() {
     final isEnabled = widget.directInputEnabled;
     return GestureDetector(
@@ -634,7 +634,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     );
   }
 
-  /// DirectInput用テキストフィールド（リアルタイム送信）
+  /// Text field for DirectInput (real-time transmission)
   Widget _buildDirectInputField() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Focus(
@@ -648,7 +648,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
         ),
         child: Row(
           children: [
-            // LIVEインジケーター（左側に配置）
+            // LIVE indicator (positioned on left)
             Container(
               margin: const EdgeInsets.only(left: 8),
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
@@ -686,7 +686,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
               ),
             ),
             const SizedBox(width: 8),
-            // 入力フィールド
+            // Input field
             Expanded(
               child: TextField(
                 controller: _directInputController,
@@ -716,7 +716,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     );
   }
 
-  /// 特殊キーボタン（tmux形式で送信）
+  /// Special key button (sends in tmux format)
   Widget _buildSpecialKeyButton(String label, String tmuxKey) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
@@ -760,7 +760,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     );
   }
 
-  /// リテラルキーボタン（そのまま文字として送信）
+  /// Literal key button (sends as character as-is)
   Widget _buildLiteralKeyButton(String label, String key) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
@@ -877,7 +877,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     );
   }
 
-  /// 画像転送ボタン
+  /// Image transfer button
   Widget _buildImageTransferButton() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
@@ -905,7 +905,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     );
   }
 
-  /// 数字キーボタン（DirectInput有効時に矢印キー行に表示）
+  /// Number key button (displayed in arrow key row when DirectInput is enabled)
   Widget _buildNumberKeyButton(String label) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
@@ -987,7 +987,7 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     );
   }
 
-  /// 特殊キーを送信（tmux形式）
+  /// Send special key (tmux format)
   void _sendSpecialKey(String tmuxKey) {
     if (widget.hapticFeedback) {
       HapticFeedback.lightImpact();
@@ -995,17 +995,17 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
 
     String key = tmuxKey;
 
-    // 特殊なケース: Shift+Tab → BTab (Back Tab)
+    // Special case: Shift+Tab → BTab (Back Tab)
     if (_shiftPressed && tmuxKey == 'Tab') {
       setState(() => _shiftPressed = false);
-      // Ctrl/Altの状態もリセット
+      // Also reset Ctrl/Alt state
       if (_ctrlPressed) setState(() => _ctrlPressed = false);
       if (_altPressed) setState(() => _altPressed = false);
       widget.onSpecialKeyPressed('BTab');
       return;
     }
 
-    // 修飾子を組み合わせる（Shift, Ctrl, Alt順）
+    // Combine modifiers (Shift, Ctrl, Alt order)
     final List<String> modifiers = [];
     if (_shiftPressed) {
       modifiers.add('S');
@@ -1020,9 +1020,9 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
       setState(() => _altPressed = false);
     }
 
-    // tmux形式で修飾子を適用
+    // Apply modifiers in tmux format
     if (modifiers.isNotEmpty) {
-      // 例: S-Enter, C-M-a など
+      // Example: S-Enter, C-M-a, etc.
       final prefix = modifiers.join('-');
       key = '$prefix-$tmuxKey';
     }
@@ -1030,13 +1030,13 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
     widget.onSpecialKeyPressed(key);
   }
 
-  /// リテラルキーを送信（文字そのまま）
+  /// Send literal key (character as-is)
   void _sendLiteralKey(String key) {
     if (widget.hapticFeedback) {
       HapticFeedback.lightImpact();
     }
 
-    // 修飾子を組み合わせる
+    // Combine modifiers
     final List<String> modifiers = [];
     if (_shiftPressed) {
       modifiers.add('S');
@@ -1051,14 +1051,14 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> {
       setState(() => _altPressed = false);
     }
 
-    // 修飾子がある場合はtmux形式で送信
+    // Send in tmux format if modifiers are present
     if (modifiers.isNotEmpty && key.length == 1) {
       final prefix = modifiers.join('-');
       widget.onSpecialKeyPressed('$prefix-$key');
       return;
     }
 
-    // 修飾子なしの場合はリテラル送信
+    // Send literal without modifiers
     widget.onKeyPressed(key);
   }
 }

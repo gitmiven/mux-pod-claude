@@ -3,18 +3,18 @@ import 'package:path/path.dart' as p;
 
 import 'file_entry.dart';
 
-/// SFTPファイルブラウザサービス
+/// SFTP file browser service
 ///
-/// ディレクトリ一覧取得、削除、名前変更、フォルダ作成などの
-/// ブラウザ操作を提供する。アップロード操作は [SftpService] が担当。
+/// Provides browser operations such as directory listing, deletion, renaming,
+/// and folder creation. Upload operations are handled by [SftpService].
 class SftpBrowserService {
   static const _listTimeout = Duration(seconds: 10);
 
-  /// ディレクトリ一覧を取得
+  /// Get directory listing
   ///
-  /// [path] のディレクトリ内容を [FileEntry] のリストとして返す。
-  /// `.` と `..` エントリは除外される。
-  /// タイムアウト（10秒）を超えた場合は例外をスローする。
+  /// Returns the directory contents at [path] as a list of [FileEntry].
+  /// `.` and `..` entries are excluded.
+  /// Throws an exception if the timeout (10 seconds) is exceeded.
   Future<List<FileEntry>> listDirectory(
     SftpClient sftp,
     String path,
@@ -28,19 +28,19 @@ class SftpBrowserService {
         .toList();
   }
 
-  /// ファイルを削除
+  /// Delete a file
   Future<void> deleteFile(SftpClient sftp, String path) async {
     final normalizedPath = validatePath(path);
     await sftp.remove(normalizedPath);
   }
 
-  /// ディレクトリを削除（空のディレクトリのみ）
+  /// Delete a directory (empty directories only)
   Future<void> deleteDirectory(SftpClient sftp, String path) async {
     final normalizedPath = validatePath(path);
     await sftp.rmdir(normalizedPath);
   }
 
-  /// ファイルまたはディレクトリの名前を変更
+  /// Rename a file or directory
   Future<void> rename(
     SftpClient sftp,
     String oldPath,
@@ -51,21 +51,21 @@ class SftpBrowserService {
     await sftp.rename(normalizedOld, normalizedNew);
   }
 
-  /// ディレクトリを作成
+  /// Create a directory
   Future<void> createDirectory(SftpClient sftp, String path) async {
     final normalizedPath = validatePath(path);
     await sftp.mkdir(normalizedPath);
   }
 
-  /// ホームディレクトリのパスを取得
+  /// Get the path to the home directory
   Future<String> getHomeDirectory(SftpClient sftp) async {
     return await sftp.absolute('.');
   }
 
-  /// パスを正規化・検証
+  /// Normalize and validate path
   ///
-  /// パストラバーサル攻撃を防ぐため、パスを正規化する。
-  /// 絶対パスのみ許可する。
+  /// Normalizes the path to prevent path traversal attacks.
+  /// Only absolute paths are allowed.
   String validatePath(String path) {
     if (path.isEmpty) return '/';
     final normalized = p.posix.normalize(path);
@@ -75,7 +75,7 @@ class SftpBrowserService {
     return normalized;
   }
 
-  /// エントリをソート
+  /// Sort entries
   List<FileEntry> sortEntries(
     List<FileEntry> entries,
     SortOption option,
@@ -83,7 +83,7 @@ class SftpBrowserService {
   ) {
     final sorted = List<FileEntry>.from(entries);
     sorted.sort((a, b) {
-      // ディレクトリを常に先頭に
+      // Always put directories at the top
       if (a.isDirectory && !b.isDirectory) return -1;
       if (!a.isDirectory && b.isDirectory) return 1;
 
@@ -106,7 +106,7 @@ class SftpBrowserService {
     return sorted;
   }
 
-  /// 隠しファイルをフィルタリング
+  /// Filter hidden files
   List<FileEntry> filterHidden(List<FileEntry> entries, bool showHidden) {
     if (showHidden) return entries;
     return entries.where((e) => !e.isHidden).toList();

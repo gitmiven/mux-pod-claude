@@ -10,7 +10,7 @@ import '../widgets/image_transfer_confirm_dialog.dart';
 import 'settings_provider.dart';
 import 'ssh_provider.dart';
 
-/// 画像転送のフェーズ
+/// Image transfer phase
 enum ImageTransferPhase {
   idle,
   picking,
@@ -22,7 +22,7 @@ enum ImageTransferPhase {
   error,
 }
 
-/// 画像転送状態
+/// Image transfer state
 class ImageTransferState {
   final ImageTransferPhase phase;
   final double uploadProgress;
@@ -65,7 +65,7 @@ class ImageTransferState {
   }
 }
 
-/// 画像転送を管理するNotifier
+/// Notifier to manage image transfer
 class ImageTransferNotifier extends Notifier<ImageTransferState> {
   final _imagePicker = ImagePicker();
   final _sftpService = SftpService();
@@ -79,7 +79,7 @@ class ImageTransferNotifier extends Notifier<ImageTransferState> {
     return const ImageTransferState();
   }
 
-  /// 画像を選択
+  /// Pick an image
   Future<void> pickImage(ImageSource source) async {
 
     if (!state.canPick) return;
@@ -116,9 +116,9 @@ class ImageTransferNotifier extends Notifier<ImageTransferState> {
     }
   }
 
-  /// パスを確認してアップロード実行
+  /// Confirm path and execute upload
   ///
-  /// [options] にダイアログで確定した全設定（オーバーライド含む）を渡す。
+  /// [options] Pass all settings confirmed in the dialog (including overrides).
   Future<String?> confirmAndUpload({
     required ImageTransferOptions options,
   }) async {
@@ -135,7 +135,7 @@ class ImageTransferNotifier extends Notifier<ImageTransferState> {
       return null;
     }
 
-    // SSH切断監視
+    // Monitor SSH disconnection
     _connectionSub?.cancel();
     _connectionSub = sshClient.connectionStateStream.listen((connState) {
       if (state.phase == ImageTransferPhase.uploading ||
@@ -152,7 +152,7 @@ class ImageTransferNotifier extends Notifier<ImageTransferState> {
     try {
       var bytes = state.pickedImageBytes!;
 
-      // フォーマット変換・リサイズ（optionsから取得）
+      // Format conversion and resize (retrieved from options)
       final format = ImageOutputFormat.fromString(options.outputFormat);
       final needsConvert = format != ImageOutputFormat.original || options.needsResize;
       if (needsConvert) {
@@ -166,7 +166,7 @@ class ImageTransferNotifier extends Notifier<ImageTransferState> {
           maxHeight: options.effectiveMaxHeight,
         );
         bytes = result.bytes;
-        // 拡張子が変わった場合はパスを更新
+        // Update path if extension changed
         final dir = remotePath.substring(0, remotePath.lastIndexOf('/') + 1);
         final baseName = remotePath.substring(remotePath.lastIndexOf('/') + 1);
         final nameWithoutExt = baseName.contains('.')
@@ -175,7 +175,7 @@ class ImageTransferNotifier extends Notifier<ImageTransferState> {
         remotePath = '$dir$nameWithoutExt.${result.extension}';
       }
 
-      // アップロード
+      // Upload
       state = state.copyWith(
         phase: ImageTransferPhase.uploading,
         uploadProgress: 0.0,
@@ -218,14 +218,14 @@ class ImageTransferNotifier extends Notifier<ImageTransferState> {
     }
   }
 
-  /// キャンセル
+  /// Cancel
   void cancel() {
     _connectionSub?.cancel();
     _connectionSub = null;
     state = const ImageTransferState(phase: ImageTransferPhase.idle);
   }
 
-  /// idleに戻す
+  /// Reset to idle
   void reset() {
     state = const ImageTransferState(phase: ImageTransferPhase.idle);
   }
@@ -237,7 +237,7 @@ class ImageTransferNotifier extends Notifier<ImageTransferState> {
   }
 }
 
-/// 画像転送プロバイダー
+/// Image transfer provider
 final imageTransferProvider =
     NotifierProvider<ImageTransferNotifier, ImageTransferState>(() {
   return ImageTransferNotifier();

@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/settings_migration.dart';
 
-/// アプリ設定
+/// App settings
 class AppSettings {
   final bool darkMode;
   final double fontSize;
@@ -15,38 +15,38 @@ class AppSettings {
   final int scrollbackLines;
   final double minFontSize;
 
-  /// 表示調整モード: 'none', 'autoFit', 'autoResize'
+  /// Display adjustment mode: 'none', 'autoFit', 'autoResize'
   final String adjustMode;
 
-  /// DirectInputモード（入力した文字を即座にターミナルに送信）
+  /// DirectInput mode (send input characters directly to terminal immediately)
   final bool directInputEnabled;
 
-  /// ターミナルカーソルの表示設定
+  /// Terminal cursor display setting
   final bool showTerminalCursor;
 
-  /// ペインナビゲーション方向の反転
+  /// Invert pane navigation direction
   final bool invertPaneNavigation;
 
-  // --- キーオーバーレイ設定 ---
-  /// キーオーバーレイ全体ON/OFF
+  // --- Key overlay settings ---
+  /// Key overlay enable/disable
   final bool showKeyOverlay;
 
-  /// キーオーバーレイ: 修飾キー組み合わせ（Ctrl+x, Alt+x, Shift+x）
+  /// Key overlay: modifier key combinations (Ctrl+x, Alt+x, Shift+x)
   final bool keyOverlayModifier;
 
-  /// キーオーバーレイ: 単独特殊キー（ESC, TAB, ENTER, S-Enter）
+  /// Key overlay: standalone special keys (ESC, TAB, ENTER, S-Enter)
   final bool keyOverlaySpecial;
 
-  /// キーオーバーレイ: 矢印キー
+  /// Key overlay: arrow keys
   final bool keyOverlayArrow;
 
-  /// キーオーバーレイ: ショートカットキー（/, -, 1-4）
+  /// Key overlay: shortcut keys (/, -, 1-4)
   final bool keyOverlayShortcut;
 
-  /// キーオーバーレイ: 表示位置
+  /// Key overlay: display position
   final String keyOverlayPosition;
 
-  // --- 画像転送設定 ---
+  // --- Image transfer settings ---
   final String imageRemotePath;
   final String imageOutputFormat;
   final int imageJpegQuality;
@@ -154,7 +154,7 @@ class AppSettings {
   }
 }
 
-/// 設定を管理するNotifier
+/// Notifier for managing settings
 class SettingsNotifier extends Notifier<AppSettings> {
   static const String _darkModeKey = 'settings_dark_mode';
   static const String _fontSizeKey = 'settings_font_size';
@@ -240,90 +240,90 @@ class SettingsNotifier extends Notifier<AppSettings> {
     }
   }
 
-  /// ダークモードを設定
+  /// Set dark mode
   Future<void> setDarkMode(bool value) async {
     state = state.copyWith(darkMode: value);
     await _saveSetting(_darkModeKey, value);
   }
 
-  /// フォントサイズを設定
+  /// Set font size
   Future<void> setFontSize(double value) async {
     state = state.copyWith(fontSize: value);
     await _saveSetting(_fontSizeKey, value);
   }
 
-  /// フォントファミリーを設定
+  /// Set font family
   Future<void> setFontFamily(String value) async {
     state = state.copyWith(fontFamily: value);
     await _saveSetting(_fontFamilyKey, value);
   }
 
-  /// 生体認証を設定
+  /// Set biometric authentication
   Future<void> setRequireBiometricAuth(bool value) async {
     state = state.copyWith(requireBiometricAuth: value);
     await _saveSetting(_biometricKey, value);
   }
 
-  /// 通知を設定
+  /// Set notifications
   Future<void> setEnableNotifications(bool value) async {
     state = state.copyWith(enableNotifications: value);
     await _saveSetting(_notificationsKey, value);
   }
 
-  /// バイブレーションを設定
+  /// Set vibration
   Future<void> setEnableVibration(bool value) async {
     state = state.copyWith(enableVibration: value);
     await _saveSetting(_vibrationKey, value);
   }
 
-  /// 画面常時オンを設定
+  /// Set keep screen on
   Future<void> setKeepScreenOn(bool value) async {
     state = state.copyWith(keepScreenOn: value);
     await _saveSetting(_keepScreenOnKey, value);
   }
 
-  /// スクロールバック行数を設定
+  /// Set scrollback line count
   Future<void> setScrollbackLines(int value) async {
     state = state.copyWith(scrollbackLines: value);
     await _saveSetting(_scrollbackKey, value);
   }
 
-  /// 最小フォントサイズを設定
+  /// Set minimum font size
   Future<void> setMinFontSize(double value) async {
     state = state.copyWith(minFontSize: value);
     await _saveSetting(_minFontSizeKey, value);
   }
 
-  /// 表示調整モードを設定
+  /// Set display adjustment mode
   Future<void> setAdjustMode(String value) async {
     state = state.copyWith(adjustMode: value);
     await _saveSetting(_adjustModeKey, value);
   }
 
-  /// DirectInputモードを設定
+  /// Set DirectInput mode
   Future<void> setDirectInputEnabled(bool value) async {
     state = state.copyWith(directInputEnabled: value);
     await _saveSetting(_directInputEnabledKey, value);
   }
 
-  /// DirectInputモードをトグル
+  /// Toggle DirectInput mode
   Future<void> toggleDirectInput() async {
     await setDirectInputEnabled(!state.directInputEnabled);
   }
 
-  /// ターミナルカーソル表示設定を設定
+  /// Set terminal cursor display setting
   Future<void> setShowTerminalCursor(bool value) async {
     state = state.copyWith(showTerminalCursor: value);
     await _saveSetting(_showTerminalCursorKey, value);
   }
 
-  /// ペインナビゲーション方向の反転を設定
+  /// Set pane navigation direction inversion
   Future<void> setInvertPaneNavigation(bool value) async {
     state = state.copyWith(invertPaneNavigation: value);
     await _saveSetting(_invertPaneNavKey, value);
   }
 
-  // --- キーオーバーレイ設定のsetter ---
+  // --- Key overlay settings setters ---
   Future<void> setShowKeyOverlay(bool value) async {
     state = state.copyWith(showKeyOverlay: value);
     await _saveSetting(_showKeyOverlayKey, value);
@@ -354,7 +354,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     await _saveSetting(_keyOverlayPositionKey, value);
   }
 
-  // --- 画像転送設定のsetter ---
+  // --- Image transfer settings setters ---
   Future<void> setImageRemotePath(String value) async {
     state = state.copyWith(imageRemotePath: value);
     await _saveSetting(_imageRemotePathKey, value);
@@ -400,18 +400,18 @@ class SettingsNotifier extends Notifier<AppSettings> {
     await _saveSetting(_imageBracketedPasteKey, value);
   }
 
-  /// リロード
+  /// Reload
   Future<void> reload() async {
     await _loadSettings();
   }
 }
 
-/// 設定プロバイダー
+/// Settings provider
 final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(() {
   return SettingsNotifier();
 });
 
-/// ダークモードプロバイダー（便利アクセス）
+/// Dark mode provider (convenient access)
 final darkModeProvider = Provider<bool>((ref) {
   return ref.watch(settingsProvider).darkMode;
 });

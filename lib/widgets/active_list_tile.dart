@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// アクティブ状態を左端バーで表現する共通ListTile
+/// Common ListTile that expresses active state with a left end bar
 ///
-/// セッション/ウィンドウ/ペイン等のリスト表示で統一的なアクティブ表現を提供する。
-/// - アクティブ時: 左端にprimary色バー + タイトル太字 + primary色
-/// - 非アクティブ時: バーなし + 通常テキスト
+/// Provides a consistent active state representation in list displays of sessions/windows/panes, etc.
+/// - When active: left bar with primary color + bold title + primary color
+/// - When inactive: no bar + normal text
 class ActiveListTile extends StatelessWidget {
   final bool isActive;
   final Widget leading;
@@ -68,7 +68,7 @@ class ActiveListTile extends StatelessWidget {
     );
   }
 
-  /// アクティブ状態に応じたアイコン色を返すヘルパー
+  /// Helper that returns icon color based on active state
   static Color iconColor(BuildContext context, {required bool isActive}) {
     final colorScheme = Theme.of(context).colorScheme;
     return isActive

@@ -6,14 +6,14 @@ import '../../services/terminal/font_calculator.dart';
 import '../../services/tmux/tmux_parser.dart';
 import '../../theme/design_colors.dart';
 
-/// リサイズ結果
+/// Resize result
 class ResizeResult {
   final int cols;
   final int rows;
   const ResizeResult({required this.cols, required this.rows});
 }
 
-/// プリセットサイズ定義
+/// Preset size definition
 class _SizePreset {
   final String label;
   final int cols;
@@ -25,7 +25,7 @@ class _SizePreset {
 // ResizePaneDialog
 // ====================================================================
 
-/// ペインリサイズ用ダイアログ
+/// Dialog for pane resizing
 class ResizePaneDialog extends StatefulWidget {
   final TmuxPane targetPane;
   final List<TmuxPane> allPanesInWindow;
@@ -156,7 +156,7 @@ class _ResizePaneDialogState extends State<ResizePaneDialog> {
 // ResizeWindowDialog
 // ====================================================================
 
-/// ウィンドウリサイズ用ダイアログ
+/// Dialog for window resizing
 class ResizeWindowDialog extends StatefulWidget {
   final TmuxWindow window;
   final List<TmuxPane> panes;
@@ -280,15 +280,15 @@ class _ResizeWindowDialogState extends State<ResizeWindowDialog> {
 }
 
 // ====================================================================
-// 共通ビルダー（トップレベル関数）
+// Common builders (top-level functions)
 // ====================================================================
 
-/// tmuxのresize-paneを簡易シミュレーションする。
+/// Simulate tmux resize-pane with a simple simulation.
 ///
-/// サイズを先に決め、位置を全て再計算する。
-/// 1. ウィンドウサイズとセパレータを算出
-/// 2. 新しいサイズを決める（カラム幅、カラム内高さ配分）
-/// 3. 位置を上から・左から再計算
+/// Determine size first, then recalculate all positions.
+/// 1. Calculate window size and separators
+/// 2. Determine new size (column width, height distribution within column)
+/// 3. Recalculate positions from top and left
 List<TmuxPane> _simulatePaneResize({
   required List<TmuxPane> panes,
   required String targetId,
@@ -299,7 +299,7 @@ List<TmuxPane> _simulatePaneResize({
   final target = panes.firstWhere((p) => p.id == targetId, orElse: () => panes.first);
   if (!panes.any((p) => p.id == targetId)) return panes;
 
-  // === Step 1: ウィンドウサイズ・セパレータ算出 ===
+  // === Step 1: Calculate window size and separators ===
   int winW = 0, winH = 0;
   for (final p in panes) {
     winW = math.max(winW, p.left + p.width);
@@ -307,55 +307,55 @@ List<TmuxPane> _simulatePaneResize({
   }
   if (winW == 0 || winH == 0) return panes;
 
-  // 同一カラム（targetと同じleft）
+  // Same column (same left as target)
   final colPanes = panes.where((p) => p.left == target.left).toList()
     ..sort((a, b) => a.top.compareTo(b.top));
 
-  // 左隣ペイン（カラムの左に隣接し、垂直方向に重なるペイン）
+  // Left neighbors (panes adjacent to the left of column, overlapping vertically)
   final leftNeighbors = panes.where((p) =>
       p.left != target.left &&
       p.left + p.width < target.left &&
       colPanes.any((cm) => p.top < cm.top + cm.height && p.top + p.height > cm.top)).toList();
 
-  // 水平セパレータ（カラムと左隣の隙間）
-  int hSep = 1; // デフォルト
+  // Horizontal separator (gap between column and left neighbor)
+  int hSep = 1; // default
   if (leftNeighbors.isNotEmpty) {
     hSep = target.left - (leftNeighbors.first.left + leftNeighbors.first.width);
     if (hSep < 0) hSep = 1;
   }
 
-  // 垂直セパレータ（カラム内ペイン間の隙間）
-  int vSep = 1; // デフォルト
+  // Vertical separator (gap between panes within column)
+  int vSep = 1; // default
   if (colPanes.length >= 2) {
     vSep = colPanes[1].top - (colPanes[0].top + colPanes[0].height);
     if (vSep < 0) vSep = 1;
   }
 
-  // === Step 2: 新しいサイズを決める ===
+  // === Step 2: Determine new size ===
 
-  // カラム幅（clamp: 最小1、最大winW - hSep - 左隣最小1）
+  // Column width (clamp: min 1, max winW - hSep - left neighbor min 1)
   final maxColWidth = leftNeighbors.isNotEmpty ? winW - hSep - 1 : winW;
   final colWidth = newCols.clamp(1, maxColWidth);
 
-  // 左隣幅
+  // Left neighbor width
   final leftWidth = leftNeighbors.isNotEmpty
       ? math.max<int>(1, winW - hSep - colWidth)
       : 0;
 
-  // カラム内高さ配分
-  // カラムの総高さ（元のカラムが使っている高さ）
+  // Height distribution within column
+  // Total column height (height currently used by the column)
   final colTop = colPanes.first.top;
   final colBottom = colPanes.last.top + colPanes.last.height;
   final colTotalH = colBottom - colTop;
   final totalVSep = vSep * (colPanes.length - 1);
   final availableH = colTotalH - totalVSep;
 
-  // ターゲットの新しい高さ（clamp: 最小1、最大=使用可能-他ペイン最小各1）
+  // Target pane's new height (clamp: min 1, max = available - other panes min 1 each)
   final otherCount = colPanes.length - 1;
-  final maxTargetH = availableH - otherCount; // 他ペインが各最小1
+  final maxTargetH = availableH - otherCount; // other panes have min 1 each
   final targetH = newRows.clamp(1, math.max<int>(1, maxTargetH));
 
-  // 残りの高さを他ペインに元の比率で配分
+  // Distribute remaining height to other panes according to original ratio
   final int remainingH = math.max<int>(0, availableH - targetH);
   final otherOriginalSum = colPanes
       .where((p) => p.id != targetId)
@@ -370,7 +370,7 @@ List<TmuxPane> _simulatePaneResize({
     for (int i = 0; i < others.length; i++) {
       final p = others[i];
       if (i == others.length - 1) {
-        // 最後のペインに残りを全て割り当て（端数調整）
+        // Assign all remaining to last pane (remainder adjustment)
         newHeights[p.id] = math.max<int>(1, remainingH - distributed);
       } else {
         final h = math.max(1, (remainingH * p.height / otherOriginalSum).round());
@@ -380,17 +380,17 @@ List<TmuxPane> _simulatePaneResize({
     }
   }
 
-  // === Step 3: 位置を再計算 ===
+  // === Step 3: Recalculate positions ===
 
-  // 左隣の新しいleft（元のまま）
+  // New left position of left neighbor (unchanged)
   final newColLeft = leftNeighbors.isNotEmpty
       ? leftNeighbors.first.left + leftWidth + hSep
-      : target.left; // 左隣がなければ元の位置
+      : target.left; // If no left neighbor, keep original position
 
-  // 左隣がなく、右隣がある場合
-  // （カラムが左端にある場合は位置は0のまま）
+  // If no left neighbor and right neighbor exists
+  // (If column is at left edge, position remains 0)
 
-  // カラム内のtopを上から再計算
+  // Recalculate top within column from top
   final newTops = <String, int>{};
   var currentTop = colTop;
   for (final p in colPanes) {
@@ -398,10 +398,10 @@ List<TmuxPane> _simulatePaneResize({
     currentTop += (newHeights[p.id] ?? p.height) + vSep;
   }
 
-  // === Step 4: 結果組み立て ===
+  // === Step 4: Assemble results ===
   return panes.map((p) {
     if (colPanes.any((cp) => cp.id == p.id)) {
-      // カラム内ペイン
+      // Pane within column
       return p.copyWith(
         left: newColLeft,
         top: newTops[p.id] ?? p.top,
@@ -409,19 +409,19 @@ List<TmuxPane> _simulatePaneResize({
         height: newHeights[p.id] ?? p.height,
       );
     } else if (leftNeighbors.any((ln) => ln.id == p.id)) {
-      // 左隣ペイン（幅変更、位置は元のまま）
+      // Left neighbor pane (width changed, position unchanged)
       return p.copyWith(width: leftWidth);
     } else {
-      // その他（変化なし）
+      // Others (no change)
       return p;
     }
   }).toList();
 }
 
-/// ペインレイアウトのグリッドプレビュー
+/// Grid preview for pane layout
 ///
-/// [previewPaneId] が指定された場合、そのペインを [previewCols]x[previewRows] で
-/// リサイズしたシミュレーション結果を描画する。
+/// If [previewPaneId] is specified, draw the simulation result of resizing
+/// that pane to [previewCols]x[previewRows].
 Widget _buildPaneGridPreview({
   required List<TmuxPane> allPanes,
   required String highlightPaneId,
@@ -431,7 +431,7 @@ Widget _buildPaneGridPreview({
 }) {
   if (allPanes.isEmpty) return const SizedBox.shrink();
 
-  // リサイズシミュレーション
+  // Resize simulation
   final panes = (previewPaneId != null && previewCols != null && previewRows != null)
       ? _simulatePaneResize(
           panes: allPanes,
@@ -455,7 +455,7 @@ Widget _buildPaneGridPreview({
         final areaW = constraints.maxWidth - pad * 2;
         final areaH = constraints.maxHeight - pad * 2;
 
-        // ウィンドウ全体の範囲を算出
+        // Calculate bounds of entire window
         int maxRight = 0;
         int maxBottom = 0;
         for (final p in panes) {
@@ -528,7 +528,7 @@ Widget _buildPaneGridPreview({
   );
 }
 
-/// ウィンドウ全体のグリッドプレビュー（ウィンドウリサイズ用）
+/// Grid preview of entire window (for window resizing)
 Widget _buildWindowGridPreview({
   required TmuxWindow window,
   required List<TmuxPane> panes,
@@ -545,7 +545,7 @@ Widget _buildWindowGridPreview({
     ),
     child: Column(
       children: [
-        // ウィンドウヘッダー
+        // Window header
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -565,11 +565,11 @@ Widget _buildWindowGridPreview({
             ),
           ),
         ),
-        // ペインレイアウト
+        // Pane layout
         Expanded(
           child: _buildPaneGridPreview(
             allPanes: panes,
-            highlightPaneId: '', // ウィンドウリサイズではペインハイライトなし
+            highlightPaneId: '', // No pane highlight for window resize
           ),
         ),
       ],
@@ -577,7 +577,7 @@ Widget _buildWindowGridPreview({
   );
 }
 
-/// 警告メッセージ
+/// Warning message
 Widget _buildWarning(String message) {
   return Container(
     padding: const EdgeInsets.all(8),
@@ -605,7 +605,7 @@ Widget _buildWarning(String message) {
   );
 }
 
-/// Cols / Rows 数値入力行
+/// Cols / Rows numeric input row
 Widget _buildSizeInputRow({
   required int cols,
   required int rows,
@@ -633,7 +633,7 @@ Widget _buildSizeInputRow({
   );
 }
 
-/// 単一の数値入力フィールド（ラベル + ◀ 値 ▶）
+/// Single numeric input field (label + ◀ value ▶)
 Widget _buildNumberInput({
   required String label,
   required int value,
@@ -690,7 +690,7 @@ Widget _buildNumberInput({
   );
 }
 
-/// ステップボタン（◀ / ▶）
+/// Step button (◀ / ▶)
 Widget _stepButton({
   required IconData icon,
   required VoidCallback? onPressed,
@@ -706,7 +706,7 @@ Widget _stepButton({
   );
 }
 
-/// プリセットChipボタン群
+/// Preset chip button group
 Widget _buildPresetChips({
   required List<_SizePreset> presets,
   required ValueChanged<_SizePreset> onSelect,

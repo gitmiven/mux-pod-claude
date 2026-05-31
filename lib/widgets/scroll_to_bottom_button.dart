@@ -5,10 +5,10 @@ import 'package:flutter/services.dart';
 
 import '../theme/design_colors.dart';
 
-/// 画面下部へスクロールするボタン
+/// Scroll-to-bottom button
 ///
-/// ESC/TABバーの上に配置され、タップで最下部にスクロールする。
-/// アクティブ時は塗りつぶし背景で表示、非アクティブ時は薄い白枠+白矢印+透明背景。
+/// Positioned above the ESC/TAB bar. Taps scroll to the bottom.
+/// When active: displayed with filled background. When inactive: light white border + white arrow + transparent background.
 class ScrollToBottomButton extends StatefulWidget {
   final VoidCallback onPressed;
 
@@ -26,7 +26,7 @@ class ScrollToBottomButtonState extends State<ScrollToBottomButton> {
   bool _visible = false;
   Timer? _fadeTimer;
 
-  /// ボタンをアクティブ表示にし、3秒後に非アクティブに遷移する
+  /// Activate button display and transition to inactive after 3 seconds
   void show() {
     if (!mounted) return;
     _fadeTimer?.cancel();
@@ -42,7 +42,7 @@ class ScrollToBottomButtonState extends State<ScrollToBottomButton> {
     });
   }
 
-  /// ボタンを完全に非表示にする
+  /// Completely hide the button
   void hide() {
     if (!mounted) return;
     _fadeTimer?.cancel();

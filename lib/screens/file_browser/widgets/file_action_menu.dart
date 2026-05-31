@@ -3,16 +3,16 @@ import 'package:flutter/material.dart';
 import '../../../services/sftp/file_entry.dart';
 import '../../../theme/design_colors.dart';
 
-/// ファイル/ディレクトリのアクションメニュー
+/// Action menu for files/directories
 enum FileAction {
   open,
   rename,
   delete,
 }
 
-/// アクションメニューを表示するBottomSheet
+/// BottomSheet that displays the action menu
 class FileActionMenu {
-  /// アクションメニューを表示し、選択されたアクションを返す
+  /// Displays the action menu and returns the selected action
   static Future<FileAction?> show(
     BuildContext context,
     FileEntry entry,
@@ -44,7 +44,7 @@ class _FileActionMenuContent extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ドラッグハンドル
+            // Drag handle
             Container(
               width: 40,
               height: 4,
@@ -55,7 +55,7 @@ class _FileActionMenuContent extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // ファイル情報ヘッダー
+            // File info header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
@@ -95,7 +95,7 @@ class _FileActionMenuContent extends StatelessWidget {
             const Divider(height: 1),
             const SizedBox(height: 4),
 
-            // アクション一覧
+            // Action list
             if (entry.isDirectory)
               _buildActionTile(
                 context,

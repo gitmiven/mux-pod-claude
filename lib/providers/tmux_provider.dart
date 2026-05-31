@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/tmux/tmux_parser.dart';
 
-/// Tmux状態
+/// Tmux state
 class TmuxState {
   final List<TmuxSession> sessions;
   final String? activeSessionName;
@@ -45,7 +45,7 @@ class TmuxState {
     );
   }
 
-  /// アクティブセッションを取得
+  /// Get active session
   TmuxSession? get activeSession {
     if (activeSessionName == null) return null;
     try {
@@ -55,7 +55,7 @@ class TmuxState {
     }
   }
 
-  /// アクティブウィンドウを取得
+  /// Get active window
   TmuxWindow? get activeWindow {
     final session = activeSession;
     if (session == null || activeWindowIndex == null) return null;
@@ -66,7 +66,7 @@ class TmuxState {
     }
   }
 
-  /// アクティブペインを取得
+  /// Get active pane
   TmuxPane? get activePane {
     final window = activeWindow;
     if (window == null || activePaneId == null) return null;
@@ -78,19 +78,19 @@ class TmuxState {
   }
 }
 
-/// Tmuxセッションを管理するNotifier
+/// Notifier for managing tmux sessions
 class TmuxNotifier extends Notifier<TmuxState> {
   @override
   TmuxState build() {
     return const TmuxState();
   }
 
-  /// セッション一覧を更新
+  /// Update session list
   void updateSessions(List<TmuxSession> sessions) {
     state = state.copyWith(sessions: sessions, error: null);
   }
 
-  /// セッション一覧を解析して更新
+  /// Parse and update session list
   void parseAndUpdateSessions(String output) {
     try {
       final sessions = TmuxParser.parseSessions(output);
@@ -100,7 +100,7 @@ class TmuxNotifier extends Notifier<TmuxState> {
     }
   }
 
-  /// フルツリーを解析して更新
+  /// Parse and update full tree
   void parseAndUpdateFullTree(String output) {
     try {
       final sessions = TmuxParser.parseFullTree(output);
@@ -110,9 +110,9 @@ class TmuxNotifier extends Notifier<TmuxState> {
     }
   }
 
-  /// アクティブセッションを設定
+  /// Set active session
   void setActiveSession(String sessionName) {
-    // セッション内の最初のアクティブウィンドウとペインを自動選択
+    // Auto-select the first active window and pane in the session
     final session = state.sessions.where((s) => s.name == sessionName).firstOrNull;
     final activeWindow = session?.windows.where((w) => w.active).firstOrNull ?? session?.windows.firstOrNull;
     final activePane = activeWindow?.panes.where((p) => p.active).firstOrNull ?? activeWindow?.panes.firstOrNull;
@@ -128,9 +128,9 @@ class TmuxNotifier extends Notifier<TmuxState> {
     );
   }
 
-  /// アクティブウィンドウを設定
+  /// Set active window
   void setActiveWindow(int windowIndex) {
-    // ウィンドウ内の最初のアクティブペインを自動選択
+    // Auto-select the first active pane in the window
     final session = state.activeSession;
     final window = session?.windows.where((w) => w.index == windowIndex).firstOrNull;
     final activePane = window?.panes.where((p) => p.active).firstOrNull ?? window?.panes.firstOrNull;
@@ -144,7 +144,7 @@ class TmuxNotifier extends Notifier<TmuxState> {
     );
   }
 
-  /// アクティブペインを設定（pane index）
+  /// Set active pane (by pane index)
   void setActivePaneByIndex(int paneIndex, {String? paneId}) {
     state = state.copyWith(
       activePaneIndex: paneIndex,
@@ -152,9 +152,9 @@ class TmuxNotifier extends Notifier<TmuxState> {
     );
   }
 
-  /// アクティブペインを設定（pane ID）
+  /// Set active pane (by pane ID)
   void setActivePane(String paneId) {
-    // paneIdからindexを取得
+    // Get index from pane ID
     final window = state.activeWindow;
     final pane = window?.panes.where((p) => p.id == paneId).firstOrNull;
     state = state.copyWith(
@@ -163,9 +163,9 @@ class TmuxNotifier extends Notifier<TmuxState> {
     );
   }
 
-  /// カーソル位置を更新
+  /// Update cursor position
   void updateCursorPosition(String paneId, int x, int y) {
-    // 変更がない場合はディープコピーを回避してスキップ
+    // Skip if no changes to avoid deep copy
     final currentPane = state.activePane;
     if (currentPane == null || currentPane.id != paneId) return;
     if (currentPane.cursorX == x && currentPane.cursorY == y) return;
@@ -186,7 +186,7 @@ class TmuxNotifier extends Notifier<TmuxState> {
     state = state.copyWith(sessions: sessions);
   }
 
-  /// アクティブなセッション/ウィンドウ/ペインを一括設定
+  /// Set active session/window/pane in bulk
   void setActive({
     String? sessionName,
     int? windowIndex,
@@ -201,7 +201,7 @@ class TmuxNotifier extends Notifier<TmuxState> {
     );
   }
 
-  /// 現在のポーリング対象のtmuxターゲット文字列を取得
+  /// Get current polling target tmux target string
   /// format: session:window.pane
   String? get currentTarget {
     final session = state.activeSessionName;
@@ -211,23 +211,23 @@ class TmuxNotifier extends Notifier<TmuxState> {
     return '$session:$window.$pane';
   }
 
-  /// ローディング状態を設定
+  /// Set loading state
   void setLoading(bool isLoading) {
     state = state.copyWith(isLoading: isLoading);
   }
 
-  /// エラーを設定
+  /// Set error
   void setError(String? error) {
     state = state.copyWith(error: error);
   }
 
-  /// 状態をクリア
+  /// Clear state
   void clear() {
     state = const TmuxState();
   }
 }
 
-/// Tmuxプロバイダー
+/// Tmux provider
 final tmuxProvider = NotifierProvider<TmuxNotifier, TmuxState>(() {
   return TmuxNotifier();
 });

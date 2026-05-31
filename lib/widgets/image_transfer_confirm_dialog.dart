@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../providers/settings_provider.dart';
 
-/// リサイズプリセット
+/// Resize preset
 enum ImageResizePreset {
   original,
   small,
@@ -27,7 +27,7 @@ enum ImageResizePreset {
     }
   }
 
-  /// 長辺の最大ピクセル数（original/customは0）
+  /// Maximum pixel count for the long side (original/custom is 0)
   int get maxLongSide {
     switch (this) {
       case original:
@@ -59,7 +59,7 @@ enum ImageResizePreset {
   }
 }
 
-/// 確認ダイアログの戻り値（全設定のオーバーライド値を含む）
+/// Return value of the confirmation dialog (includes override values for all settings)
 class ImageTransferOptions {
   final String remotePath;
   final String outputFormat;
@@ -83,26 +83,26 @@ class ImageTransferOptions {
     required this.bracketedPaste,
   });
 
-  /// リサイズが必要か
+  /// Whether resize is needed
   bool get needsResize => resizePreset != ImageResizePreset.original;
 
-  /// 実効最大幅
+  /// Effective maximum width
   int get effectiveMaxWidth {
     if (resizePreset == ImageResizePreset.custom) return customMaxWidth;
     return resizePreset.maxLongSide;
   }
 
-  /// 実効最大高さ
+  /// Effective maximum height
   int get effectiveMaxHeight {
     if (resizePreset == ImageResizePreset.custom) return customMaxHeight;
     return resizePreset.maxLongSide;
   }
 }
 
-/// 画像転送確認ダイアログ
+/// Image transfer confirmation dialog
 ///
-/// 設定画面のデフォルト値を初期値として表示し、
-/// 今回のアップロードだけに適用する一時的なオーバーライドが可能。
+/// Displays default values from the settings screen as initial values,
+/// with ability to temporarily override for this upload only.
 class ImageTransferConfirmDialog extends StatefulWidget {
   final String remotePath;
   final Uint8List imageBytes;
@@ -212,7 +212,7 @@ class _ImageTransferConfirmDialogState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 画像プレビュー + ファイル情報
+              // Image preview + file information
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: ConstrainedBox(
@@ -246,7 +246,7 @@ class _ImageTransferConfirmDialogState
               ),
               const SizedBox(height: 16),
 
-              // --- 優先度高: 常時表示 ---
+              // --- High priority: always visible ---
 
               // Output Format
               _label('Format'),

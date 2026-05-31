@@ -1,21 +1,21 @@
-/// シェル/tmuxコマンドに渡すユーザー由来の値を安全にエンコードする唯一の共有機構。
+/// The single shared mechanism for safely encoding user-supplied values passed to shell/tmux commands.
 ///
-/// コマンドインジェクション対策の単一の責務を持つ（FR-013）。セッション名・ウィンドウ名・
-/// ペインID・送信キー・ファイルパス・ユーザー指定のtmuxパスなど、シェル経由で実行される
-/// コマンドに入るすべてのユーザー由来フラグメントはこの機構を通すこと。
+/// Holds the single responsibility of preventing command injection (FR-013). All user-supplied
+/// fragments entering commands executed via shell — such as session names, window names, pane IDs,
+/// key sends, file paths, and user-specified tmux paths — must pass through this mechanism.
 ///
-/// 方式: 特殊文字を含む場合のみダブルクォートで包み、内部の `\\ " $ \`` をエスケープする。
-/// ダブルクォート内ではスペース・`'`・`;`・`|`・`&`・`<`・`>`・`()`・改行などはすべて
-/// リテラルとして扱われるため、追加のエスケープは不要。
+/// Method: wrap in double quotes only if the string contains special characters, and escape
+/// the internal `\\ " $ \`` sequences. Within double quotes, spaces, `'`, `;`, `|`, `&`, `<`, `>`,
+/// `()`, and newlines are all treated as literals, so no additional escaping is required.
 class ShellEscape {
-  /// クォートが必要な文字（シェルにとって意味を持つ文字）。
+  /// Characters that require quoting (characters with special meaning to the shell).
   static final RegExp _needsQuote = RegExp(r'''[\s"'\\$`!{}\[\]<>|&;()]''');
 
-  /// [arg] をシェル引数として安全な単一トークンにエンコードする。
+  /// Encodes [arg] as a safe single token for shell arguments.
   ///
-  /// - 安全な文字のみなら、そのまま返す（コマンドの可読性とテスト互換性のため）。
-  /// - 空文字列は `""` を返す（引数が欠落して後続のオプションがズレるのを防ぐ）。
-  /// - それ以外はダブルクォートで包み、`\\ " $ \`` をエスケープする。
+  /// - If only safe characters are present, returns it unchanged (for command readability and test compatibility).
+  /// - If empty, returns `""` (prevents argument dropout and misalignment of subsequent options).
+  /// - Otherwise wraps in double quotes and escapes `\\ " $ \`` sequences.
   static String quote(String arg) {
     if (arg.isEmpty) {
       return '""';
