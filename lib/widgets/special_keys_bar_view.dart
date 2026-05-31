@@ -1,6 +1,24 @@
 part of 'special_keys_bar.dart';
 
 mixin _SpecialKeysBarView on _SpecialKeysBarLogic {
+  /// Variable key bar (top row). Renders [config]'s buttons evenly across the
+  /// width; each tap goes through [_sendSpecialKey] so active modifier toggles
+  /// (CTRL/ALT/SHIFT) compose just like the other special keys. The initial
+  /// configuration is the function keys F1–F10.
+  Widget _buildVariableKeyBar(KeyBarConfig config) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      color: isDark ? DesignColors.surfaceDark : DesignColors.surfaceLight,
+      child: Row(
+        children: [
+          for (final button in config.buttons)
+            _buildSpecialKeyButton(button.label, button.tmuxKey),
+        ],
+      ),
+    );
+  }
+
   /// Top modifier key row (ESC, TAB, CTRL, ALT, SHIFT, ENTER, S-RET, /, -)
   Widget _buildModifierKeysRow() {
     final isDark = Theme.of(context).brightness == Brightness.dark;

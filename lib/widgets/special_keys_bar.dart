@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/design_colors.dart';
+import 'key_bar_config.dart';
 
 part 'special_keys_bar_logic.dart';
 part 'special_keys_bar_view.dart';
@@ -33,6 +34,11 @@ class SpecialKeysBar extends StatefulWidget {
   /// Callback when image transfer button is pressed
   final VoidCallback? onImagePickRequested;
 
+  /// The variable key bar shown above the special-key rows. Data-driven so the
+  /// button set can be repurposed later; defaults to the function keys F1–F10.
+  /// Pass null to hide the bar.
+  final KeyBarConfig? variableKeyBar;
+
   const SpecialKeysBar({
     super.key,
     required this.onKeyPressed,
@@ -42,6 +48,7 @@ class SpecialKeysBar extends StatefulWidget {
     this.directInputEnabled = false,
     this.onDirectInputToggle,
     this.onImagePickRequested,
+    this.variableKeyBar = KeyBarConfig.functionKeys,
   });
 
   @override
@@ -97,6 +104,8 @@ class _SpecialKeysBarState extends State<SpecialKeysBar> with _SpecialKeysBarLog
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (widget.variableKeyBar != null)
+              _buildVariableKeyBar(widget.variableKeyBar!),
             _buildModifierKeysRow(),
             _buildArrowKeysRow(),
             if (widget.directInputEnabled) _buildDirectInputRow(),
