@@ -195,6 +195,11 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final prefs = await SharedPreferences.getInstance();
     await SettingsMigrationRunner.run(prefs);
 
+    // The provider may have been disposed while the async load was in flight
+    // (e.g. the screen was left, or a unit-test container was torn down).
+    // Setting state after disposal throws; guard against it.
+    if (!ref.mounted) return;
+
     state = AppSettings(
       darkMode: prefs.getBool(_darkModeKey) ?? true,
       fontSize: prefs.getDouble(_fontSizeKey) ?? 14.0,
