@@ -500,13 +500,14 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              SegmentedButton<FileViewerType>(
-                segments: [
+              DropdownButtonFormField<FileViewerType>(
+                initialValue: selected,
+                decoration: const InputDecoration(labelText: 'Open with'),
+                items: [
                   for (final t in FileViewerType.values)
-                    ButtonSegment(value: t, label: Text(t.label)),
+                    DropdownMenuItem(value: t, child: Text(t.label)),
                 ],
-                selected: {selected},
-                onSelectionChanged: (s) => setState(() => selected = s.first),
+                onChanged: (v) => setState(() => selected = v ?? selected),
               ),
             ],
           ),

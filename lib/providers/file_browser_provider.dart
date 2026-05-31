@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../services/file_browser/file_browser_start.dart';
 import '../services/sftp/file_entry.dart';
@@ -282,6 +285,17 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
   /// Reload current directory
   Future<void> refresh() async {
     await loadDirectory(state.currentPath);
+  }
+
+  /// Downloads [entry] to a temp file and returns its local path (for opening
+  /// in an external app). Throws on failure / oversize.
+  Future<String> downloadToTemp(FileEntry entry) async {
+    final sshClient = _getSshClient();
+    final sftp = await sshClient.openSftp();
+    final dir = await getTemporaryDirectory();
+    final dest = File(p.join(dir.path, entry.name));
+    await _browserService.downloadToFile(sftp, entry.fullPath, dest);
+    return dest.path;
   }
 
   // --- Private methods ---

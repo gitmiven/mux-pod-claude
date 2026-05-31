@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../providers/ssh_provider.dart';
 import '../../services/sftp/sftp_browser_service.dart';
+import '../../services/viewer/file_parsers.dart';
 import '../../services/viewer/file_viewer_type.dart';
 import '../../services/viewer/markdown_image.dart';
 
@@ -101,7 +102,99 @@ class _FileViewerScreenState extends ConsumerState<FileViewerScreen> {
         return _buildMarkdown(bytes);
       case FileViewerType.text:
         return _buildText(bytes);
+      case FileViewerType.csv:
+        return _buildCsv(bytes);
+      case FileViewerType.archive:
+        return _buildArchive(bytes);
+      case FileViewerType.external:
+        // External files are downloaded + opened by the browser, not here.
+        return _message('This file opens in an external app.');
     }
+  }
+
+  Widget _buildCsv(Uint8List bytes) {
+    final List<List<String>> rows;
+    try {
+      rows = parseCsvRows(utf8.decode(bytes, allowMalformed: true));
+    } catch (_) {
+      return _message("Couldn't read this CSV.");
+    }
+    if (rows.isEmpty) return _message('Empty CSV.');
+
+    // Cap what we render so a huge sheet stays responsive.
+    const maxRows = 500;
+    final shown = rows.length > maxRows ? rows.sublist(0, maxRows) : rows;
+    final columns = shown.fold<int>(0, (m, r) => r.length > m ? r.length : m);
+    final header = shown.first;
+    final body = shown.skip(1).toList();
+
+    String cell(List<String> r, int i) => i < r.length ? r[i] : '';
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.vertical,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columns: [
+            for (var i = 0; i < columns; i++)
+              DataColumn(
+                label: Text(
+                  cell(header, i),
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+          ],
+          rows: [
+            for (final r in body)
+              DataRow(
+                cells: [
+                  for (var i = 0; i < columns; i++)
+                    DataCell(Text(
+                      cell(r, i),
+                      style: GoogleFonts.jetBrainsMono(fontSize: 12),
+                    )),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildArchive(Uint8List bytes) {
+    final List<ZipEntry> entries;
+    try {
+      entries = listZipEntries(bytes);
+    } catch (_) {
+      return _message("Couldn't read this archive.");
+    }
+    if (entries.isEmpty) return _message('Empty archive.');
+    return ListView.builder(
+      itemCount: entries.length,
+      itemBuilder: (context, index) {
+        final e = entries[index];
+        return ListTile(
+          dense: true,
+          leading: Icon(e.isFile ? Icons.insert_drive_file_outlined : Icons.folder_outlined),
+          title: Text(
+            e.name,
+            style: GoogleFonts.jetBrainsMono(fontSize: 13),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: e.isFile ? Text(_formatBytes(e.size)) : null,
+        );
+      },
+    );
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   Widget _buildImage(Uint8List bytes) {
