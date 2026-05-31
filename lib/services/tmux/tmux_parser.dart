@@ -280,11 +280,19 @@ class TmuxParser {
       final cursorX = parts.length > 15 ? int.tryParse(parts[15]) ?? 0 : 0;
       final cursorY = parts.length > 16 ? int.tryParse(parts[16]) ?? 0 : 0;
       final paneCurrentPath = parts.length > 17 && parts[17].isNotEmpty ? parts[17] : null;
+      // session_activity (epoch seconds) — same for every pane line of a session;
+      // appended last so older payloads without the token still parse (null).
+      final sessionActivity =
+          parts.length > 19 ? _parseTimestamp(parts[19]) : null;
 
       // Get or create session
       sessionsMap.putIfAbsent(
         sessionName,
-        () => TmuxSession(name: sessionName, id: sessionId),
+        () => TmuxSession(
+          name: sessionName,
+          id: sessionId,
+          lastActivity: sessionActivity,
+        ),
       );
 
       final windowFlags = parts.length > 18 ? _parseWindowFlags(parts[18]) : const <TmuxWindowFlag>{};
@@ -437,6 +445,11 @@ class TmuxSession {
   final String name;
   final String? id;
   final DateTime? created;
+
+  /// Last activity time (tmux `#{session_activity}`), used to order the
+  /// in-session switch dropdown most-recently-active first. Null when the
+  /// source did not provide it (older tmux / a payload without the token).
+  final DateTime? lastActivity;
   final bool attached;
   final int windowCount;
   final List<TmuxWindow> windows;
@@ -445,6 +458,7 @@ class TmuxSession {
     required this.name,
     this.id,
     this.created,
+    this.lastActivity,
     this.attached = false,
     this.windowCount = 0,
     this.windows = const [],
@@ -454,6 +468,7 @@ class TmuxSession {
     String? name,
     String? id,
     DateTime? created,
+    DateTime? lastActivity,
     bool? attached,
     int? windowCount,
     List<TmuxWindow>? windows,
@@ -462,10 +477,26 @@ class TmuxSession {
       name: name ?? this.name,
       id: id ?? this.id,
       created: created ?? this.created,
+      lastActivity: lastActivity ?? this.lastActivity,
       attached: attached ?? this.attached,
       windowCount: windowCount ?? this.windowCount,
       windows: windows ?? this.windows,
     );
+  }
+
+  /// Comparator that orders sessions **most-recently-active first**.
+  ///
+  /// Sessions with a null/unknown [lastActivity] sort to the bottom (treated as
+  /// least recent); ties (including two nulls) break on [name] so the order is
+  /// deterministic rather than tmux's map-iteration order.
+  static int byRecencyDesc(TmuxSession a, TmuxSession b) {
+    final at = a.lastActivity;
+    final bt = b.lastActivity;
+    if (at == null && bt == null) return a.name.compareTo(b.name);
+    if (at == null) return 1; // a is least recent → after b
+    if (bt == null) return -1;
+    final cmp = bt.compareTo(at); // descending (newer first)
+    return cmp != 0 ? cmp : a.name.compareTo(b.name);
   }
 
   /// Get session target string

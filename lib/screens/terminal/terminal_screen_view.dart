@@ -247,6 +247,8 @@ mixin _TerminalScreenView on _TerminalScreenLogic {
       builder: (sheetContext) {
         final colorScheme = Theme.of(sheetContext).colorScheme;
         final maxHeight = MediaQuery.of(sheetContext).size.height * 0.6;
+        final sessions = [...tmuxState.sessions]
+          ..sort(TmuxSession.byRecencyDesc);
         return SafeArea(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxHeight: maxHeight),
@@ -274,9 +276,12 @@ mixin _TerminalScreenView on _TerminalScreenLogic {
                 Flexible(
                   child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: tmuxState.sessions.length,
+                    // Order most-recently-active first (matches the startup
+                    // list's "recent" feel); sort a copy so tmuxState's order is
+                    // left untouched for other consumers.
+                    itemCount: sessions.length,
                     itemBuilder: (context, index) {
-                      final session = tmuxState.sessions[index];
+                      final session = sessions[index];
                       final isActive = session.name == tmuxState.activeSessionName;
                       return TmuxSessionTile(
                         session: session,
