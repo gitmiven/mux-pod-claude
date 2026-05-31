@@ -85,4 +85,36 @@ void main() {
       expect(controller.text, 'あ');
     });
   });
+
+  group('InputDialogContent – soft keyboard (IME action)', () {
+    testWidgets('the field requests the send IME action', (tester) async {
+      await tester.pumpWidget(_buildWidget(
+        onValueChanged: (_) {},
+        onSend: (_) async {},
+      ));
+      await tester.pump();
+
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.textInputAction, TextInputAction.send);
+    });
+
+    // Regression: on a phone soft keyboard, Enter emits the IME submit action
+    // (not a hardware KeyEvent). Previously the field used the newline action
+    // with no onSubmitted, so Enter inserted a newline and never sent.
+    testWidgets('soft-keyboard send action calls onSend exactly once',
+        (tester) async {
+      int sendCount = 0;
+      await tester.pumpWidget(_buildWidget(
+        initialValue: 'ls -la',
+        onValueChanged: (_) {},
+        onSend: (v) async => sendCount++,
+      ));
+      await tester.pumpAndSettle(); // let autofocus connect the input client
+
+      await tester.testTextInput.receiveAction(TextInputAction.send);
+      await tester.pump();
+
+      expect(sendCount, 1);
+    });
+  });
 }
