@@ -35,7 +35,9 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(fileBrowserProvider.notifier).initialize(widget.paneId);
+      ref
+          .read(fileBrowserProvider.notifier)
+          .initialize(widget.connectionId, widget.paneId);
     });
   }
 

@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../services/file_browser/file_browser_start.dart';
 import '../services/sftp/file_entry.dart';
 import '../services/sftp/sftp_browser_service.dart';
 import '../services/ssh/ssh_client.dart';
 import '../services/tmux/tmux_parser.dart';
+import 'settings_provider.dart';
 import 'ssh_provider.dart';
 import 'tmux_provider.dart';
 import '../services/logging/app_log.dart';
@@ -66,6 +68,11 @@ class FileBrowserState {
 /// Uses AutoDisposeNotifier and is automatically destroyed when the screen is closed.
 class FileBrowserNotifier extends Notifier<FileBrowserState> {
   final SftpBrowserService _browserService = SftpBrowserService();
+  final LastPathStore _lastPathStore = LastPathStore();
+
+  /// Connection this browser session belongs to, for the per-connection
+  /// "last visited" memory. Null disables remembering.
+  String? _connectionId;
 
   /// Version number for race condition prevention
   int _listVersion = 0;
@@ -85,30 +92,44 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
   ///
   /// Uses the CWD of the pane associated with [paneId] as the initial directory.
   /// Falls back to home directory if CWD cannot be retrieved.
-  Future<void> initialize(String? paneId) async {
+  Future<void> initialize(String? connectionId, String? paneId) async {
     // Clear previous error state
-    _log('initialize START (paneId=$paneId)');
+    _log('initialize START (connectionId=$connectionId, paneId=$paneId)');
     state = const FileBrowserState();
+    _connectionId = connectionId;
 
     final tmuxState = ref.read(tmuxProvider);
-    String? initialPath;
 
-    // Get the pane's CWD
+    // The "Claude Code folder" — the pane's current working directory.
+    String? claudeCodePath;
     if (paneId != null) {
-      final pane = _findPaneById(tmuxState, paneId);
-      initialPath = pane?.currentPath;
+      claudeCodePath = _findPaneById(tmuxState, paneId)?.currentPath;
     }
 
     // Monitor SSH connection state
     _startConnectionMonitoring();
 
-    // Determine initial directory
-    if (initialPath != null && initialPath.isNotEmpty) {
-      await loadDirectory(initialPath);
-    } else {
-      // Fall back to home directory
-      await _loadHomeDirectory();
+    // Resolve the start directory per the configured mode.
+    final mode = ref.read(settingsProvider).fileBrowserStartDir;
+    String? lastPath;
+    if (mode == kFileBrowserStartLastVisited && connectionId != null) {
+      lastPath = await _lastPathStore.get(connectionId);
     }
+    final candidates = startPathCandidates(
+      mode: mode,
+      lastPath: lastPath,
+      claudeCodePath: claudeCodePath,
+    );
+
+    // Try each candidate; the first that loads wins.
+    for (final path in candidates) {
+      await loadDirectory(path);
+      if (state.error == null) return;
+      _log('initialize candidate failed ($path), trying next');
+    }
+
+    // Nothing loaded (or no candidate) → home directory.
+    await _loadHomeDirectory();
   }
 
   /// Load directory
@@ -142,6 +163,12 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
         isLoading: false,
         currentPath: path,
       );
+
+      // Remember where we are (per connection) for "open at last visited".
+      final connectionId = _connectionId;
+      if (connectionId != null) {
+        unawaited(_lastPathStore.set(connectionId, path));
+      }
     } catch (e) {
       _log('loadDirectory ERROR: $e');
       if (version != _listVersion) return;

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../providers/settings_provider.dart';
+import '../../services/file_browser/file_browser_start.dart';
 import '../../services/viewer/file_viewer_type.dart';
 import '../../theme/design_colors.dart';
 import '../../widgets/dialogs/font_size_dialog.dart';
@@ -319,7 +320,17 @@ class SettingsScreen extends ConsumerWidget {
                   onChanged: (v) => ref.read(settingsProvider.notifier).setImageBracketedPaste(v),
                 ),
                 const Divider(),
-                const _SectionHeader(title: 'File viewers'),
+                const _SectionHeader(title: 'File browser'),
+                ListTile(
+                  leading: const Icon(Icons.folder_open),
+                  title: const Text('Open at'),
+                  subtitle: Text(_startDirLabel(settings.fileBrowserStartDir)),
+                  onTap: () => _showStartDirPicker(
+                    context,
+                    ref,
+                    settings.fileBrowserStartDir,
+                  ),
+                ),
                 const ListTile(
                   leading: Icon(Icons.visibility),
                   title: Text('Open files in-app'),
@@ -368,6 +379,48 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  String _startDirLabel(String mode) {
+    return mode == kFileBrowserStartLastVisited
+        ? 'Last visited folder'
+        : 'Claude Code folder (current directory)';
+  }
+
+  /// Picker for the file-browser start directory.
+  Future<void> _showStartDirPicker(
+    BuildContext context,
+    WidgetRef ref,
+    String current,
+  ) async {
+    Widget tile(String mode, String title, String subtitle) => ListTile(
+          title: Text(title),
+          subtitle: Text(subtitle),
+          trailing: current == mode ? const Icon(Icons.check) : null,
+          onTap: () => Navigator.pop(context, mode),
+        );
+
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Open file browser at'),
+        children: [
+          tile(
+            kFileBrowserStartClaudeCode,
+            'Claude Code folder',
+            "The pane's current directory",
+          ),
+          tile(
+            kFileBrowserStartLastVisited,
+            'Last visited folder',
+            'Where you were last (per connection)',
+          ),
+        ],
+      ),
+    );
+    if (choice != null) {
+      await ref.read(settingsProvider.notifier).setFileBrowserStartDir(choice);
+    }
   }
 
   /// One ListTile per configured extension → viewer mapping (sorted by ext),

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/file_browser/file_browser_start.dart';
 import '../services/settings_migration.dart';
 import '../services/viewer/file_viewer_type.dart';
 
@@ -65,6 +66,10 @@ class AppSettings {
   /// `Open with <viewer>` action.
   final Map<String, String> fileViewers;
 
+  /// Where the file browser opens: `claudeCodeFolder` (the pane CWD, default) or
+  /// `lastVisited` (the remembered per-connection directory).
+  final String fileBrowserStartDir;
+
   const AppSettings({
     this.darkMode = true,
     this.fontSize = 14.0,
@@ -95,6 +100,7 @@ class AppSettings {
     this.imageAutoEnter = false,
     this.imageBracketedPaste = false,
     this.fileViewers = kDefaultFileViewers,
+    this.fileBrowserStartDir = kFileBrowserStartClaudeCode,
   });
 
   bool get isAutoFit => adjustMode == 'autoFit';
@@ -130,6 +136,7 @@ class AppSettings {
     bool? imageAutoEnter,
     bool? imageBracketedPaste,
     Map<String, String>? fileViewers,
+    String? fileBrowserStartDir,
   }) {
     return AppSettings(
       darkMode: darkMode ?? this.darkMode,
@@ -161,6 +168,7 @@ class AppSettings {
       imageAutoEnter: imageAutoEnter ?? this.imageAutoEnter,
       imageBracketedPaste: imageBracketedPaste ?? this.imageBracketedPaste,
       fileViewers: fileViewers ?? this.fileViewers,
+      fileBrowserStartDir: fileBrowserStartDir ?? this.fileBrowserStartDir,
     );
   }
 }
@@ -196,6 +204,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const String _keyOverlayShortcutKey = 'settings_key_overlay_shortcut';
   static const String _keyOverlayPositionKey = 'settings_key_overlay_position';
   static const String _fileViewersKey = 'settings_file_viewers';
+  static const String _fileBrowserStartDirKey = 'settings_file_browser_start_dir';
 
   /// Decode the file-viewers map from its stored JSON, falling back to the
   /// defaults when absent or unparseable. Keeps only entries whose value is a
@@ -262,6 +271,8 @@ class SettingsNotifier extends Notifier<AppSettings> {
       imageAutoEnter: prefs.getBool(_imageAutoEnterKey) ?? false,
       imageBracketedPaste: prefs.getBool(_imageBracketedPasteKey) ?? false,
       fileViewers: _decodeFileViewers(prefs.getString(_fileViewersKey)),
+      fileBrowserStartDir: prefs.getString(_fileBrowserStartDirKey) ??
+          kFileBrowserStartClaudeCode,
     );
   }
 
@@ -463,6 +474,15 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final next = Map<String, String>.from(state.fileViewers)
       ..remove(extension.toLowerCase().trim());
     await setFileViewers(next);
+  }
+
+  /// Set where the file browser opens (`claudeCodeFolder` / `lastVisited`).
+  Future<void> setFileBrowserStartDir(String value) async {
+    final normalised = value == kFileBrowserStartLastVisited
+        ? kFileBrowserStartLastVisited
+        : kFileBrowserStartClaudeCode;
+    state = state.copyWith(fileBrowserStartDir: normalised);
+    await _saveSetting(_fileBrowserStartDirKey, normalised);
   }
 
   /// Reload
