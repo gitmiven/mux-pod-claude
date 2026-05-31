@@ -13,7 +13,7 @@ import '../../services/ssh/ssh_client.dart';
 import '../../services/ssh/trusted_host_identity.dart';
 import '../../theme/design_colors.dart';
 
-/// 接続編集画面
+/// Connection edit screen.
 class ConnectionFormScreen extends ConsumerStatefulWidget {
   final String? connectionId;
 
@@ -187,7 +187,7 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
     );
   }
 
-  /// 信頼済みホスト識別子（TOFU）の表示と「忘れる」操作（FR-008/009）。
+  /// Trusted host identifier (TOFU) display and 'forget' operation (FR-008/009).
   Widget _buildHostIdentitySection() {
     final colorScheme = Theme.of(context).colorScheme;
     final host = _hostController.text.trim();
@@ -940,7 +940,7 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
     bool tmuxInstalled = false;
 
     try {
-      // 認証情報を準備
+      // Prepare authentication credentials.
       String? password;
       String? privateKey;
       String? passphrase;
@@ -962,7 +962,7 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
         }
       }
 
-      // SSH接続テスト
+      // SSH connection test.
       final customTmuxPath = _tmuxPathController.text.trim();
       await sshClient.connect(
         host: _hostController.text.trim(),
@@ -976,8 +976,8 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
         ),
       );
 
-      // tmuxがインストールされているか確認
-      // connect()内でPersistentShell（対話シェル）経由で絶対パスを検出済み
+      // Check if tmux is installed.
+      // Absolute path already detected via PersistentShell (interactive shell) inside connect().
       tmuxInstalled = sshClient.tmuxPath != null;
     } on SshAuthenticationError catch (e) {
       errorMessage = 'Authentication failed: ${e.message}';

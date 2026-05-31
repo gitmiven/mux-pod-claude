@@ -9,9 +9,9 @@ import 'widgets/file_action_menu.dart';
 import 'widgets/file_list_tile.dart';
 import 'widgets/path_bar.dart';
 
-/// SFTPファイルブラウザ画面
+/// SFTP file browser screen
 ///
-/// tmuxペインに1:1で紐づき、ペインのCWDを初期ディレクトリとして使用する。
+/// Linked 1:1 to a tmux pane, uses the pane's CWD as the initial directory.
 class FileBrowserScreen extends ConsumerStatefulWidget {
   final String connectionId;
   final String? paneId;
@@ -92,7 +92,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
         ),
       ),
       actions: [
-        // 隠しファイルトグル
+        // Toggle hidden files
         IconButton(
           icon: Icon(
             state.showHidden ? Icons.visibility : Icons.visibility_off,
@@ -102,7 +102,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
               ref.read(fileBrowserProvider.notifier).toggleShowHidden(),
           tooltip: state.showHidden ? 'Hide hidden files' : 'Show hidden files',
         ),
-        // ソートメニュー
+        // Sort menu
         PopupMenuButton<_SortSelection>(
           icon: const Icon(Icons.sort, size: 22),
           tooltip: 'Sort',
@@ -247,7 +247,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
-            // 先頭に親ディレクトリ「..」を表示（ルート以外）
+            // Display parent directory ".." at the top (except for root)
             if (state.currentPath != '/') {
               if (index == 0) {
                 return ListTile(

@@ -13,7 +13,7 @@ void main() {
           const TmuxPane(index: 1, id: '%1', left: 41, top: 0, width: 39, height: 24),
         ];
 
-        // pane0から右 → pane1
+        // From pane0 to the right → pane1
         final right = PaneNavigator.findAdjacentPane(
           panes: panes,
           current: panes[0],
@@ -21,7 +21,7 @@ void main() {
         );
         expect(right?.id, '%1');
 
-        // pane1から左 → pane0
+        // From pane1 to the left → pane0
         final left = PaneNavigator.findAdjacentPane(
           panes: panes,
           current: panes[1],
@@ -29,7 +29,7 @@ void main() {
         );
         expect(left?.id, '%0');
 
-        // pane0から左 → null（端）
+        // From pane0 to the left → null (edge)
         final noLeft = PaneNavigator.findAdjacentPane(
           panes: panes,
           current: panes[0],
@@ -37,7 +37,7 @@ void main() {
         );
         expect(noLeft, isNull);
 
-        // pane1から右 → null（端）
+        // From pane1 to the right → null (edge)
         final noRight = PaneNavigator.findAdjacentPane(
           panes: panes,
           current: panes[1],
@@ -52,7 +52,7 @@ void main() {
           const TmuxPane(index: 1, id: '%1', left: 0, top: 13, width: 80, height: 11),
         ];
 
-        // pane0から下 → pane1
+        // From pane0 downward → pane1
         final down = PaneNavigator.findAdjacentPane(
           panes: panes,
           current: panes[0],
@@ -60,7 +60,7 @@ void main() {
         );
         expect(down?.id, '%1');
 
-        // pane1から上 → pane0
+        // From pane1 upward → pane0
         final up = PaneNavigator.findAdjacentPane(
           panes: panes,
           current: panes[1],
@@ -68,7 +68,7 @@ void main() {
         );
         expect(up?.id, '%0');
 
-        // pane0から上 → null
+        // From pane0 upward → null
         expect(
           PaneNavigator.findAdjacentPane(
             panes: panes,
@@ -86,7 +86,7 @@ void main() {
           const TmuxPane(index: 2, id: '%2', left: 0, top: 26, width: 80, height: 11),
         ];
 
-        // pane0から下 → pane1（pane2ではなく最も近いpane1）
+        // From pane0 downward → pane1 (closest pane, not pane2)
         final down = PaneNavigator.findAdjacentPane(
           panes: panes,
           current: panes[0],
@@ -94,7 +94,7 @@ void main() {
         );
         expect(down?.id, '%1');
 
-        // pane2から上 → pane1
+        // From pane2 upward → pane1
         final up = PaneNavigator.findAdjacentPane(
           panes: panes,
           current: panes[2],
@@ -104,15 +104,15 @@ void main() {
       });
 
       test('T字レイアウトで重なり条件が機能する', () {
-        // 上: 1つの幅広ペイン
-        // 下: 左右2つのペイン
+        // Top: 1 wide pane
+        // Bottom: 2 panes left and right
         final panes = [
           const TmuxPane(index: 0, id: '%0', left: 0, top: 0, width: 80, height: 12),
           const TmuxPane(index: 1, id: '%1', left: 0, top: 13, width: 40, height: 11),
           const TmuxPane(index: 2, id: '%2', left: 41, top: 13, width: 39, height: 11),
         ];
 
-        // pane0から下: pane1またはpane2（両方重なりあり、最も近いものを返す）
+        // From pane0 downward: pane1 or pane2 (both overlap, returns closest)
         final down = PaneNavigator.findAdjacentPane(
           panes: panes,
           current: panes[0],
@@ -121,7 +121,7 @@ void main() {
         expect(down, isNotNull);
         expect(['%1', '%2'], contains(down?.id));
 
-        // pane1から上 → pane0（重なりあり）
+        // From pane1 upward → pane0 (overlap)
         final up = PaneNavigator.findAdjacentPane(
           panes: panes,
           current: panes[1],
@@ -129,7 +129,7 @@ void main() {
         );
         expect(up?.id, '%0');
 
-        // pane1から右 → pane2
+        // From pane1 to the right → pane2
         final right = PaneNavigator.findAdjacentPane(
           panes: panes,
           current: panes[1],
@@ -139,16 +139,16 @@ void main() {
       });
 
       test('L字レイアウトで重なりがない方向はnull', () {
-        // 左上: pane0
-        // 右上: pane1
-        // 左下: pane2（右下にはペインなし）
+        // Top-left: pane0
+        // Top-right: pane1
+        // Bottom-left: pane2 (no pane at bottom-right)
         final panes = [
           const TmuxPane(index: 0, id: '%0', left: 0, top: 0, width: 40, height: 12),
           const TmuxPane(index: 1, id: '%1', left: 41, top: 0, width: 39, height: 24),
           const TmuxPane(index: 2, id: '%2', left: 0, top: 13, width: 40, height: 11),
         ];
 
-        // pane2から右 → pane1（垂直方向の重なりあり）
+        // From pane2 to the right → pane1 (vertical overlap exists)
         final right = PaneNavigator.findAdjacentPane(
           panes: panes,
           current: panes[2],
@@ -268,7 +268,7 @@ void main() {
       });
 
       test('カスタム閾値で検出', () {
-        // デフォルト閾値(50)では検出されないが、閾値20なら検出される
+        // Not detected with default threshold (50), but detected with threshold 20
         expect(
           PaneNavigator.detectSwipeDirection(const Offset(30, 5)),
           isNull,
@@ -280,7 +280,7 @@ void main() {
       });
 
       test('dx == dyの場合は垂直方向優先', () {
-        // abs(dx) == abs(dy)の場合、dy側のelse分岐に入る
+        // When abs(dx) == abs(dy), enters the dy branch (else)
         expect(
           PaneNavigator.detectSwipeDirection(const Offset(60, 60)),
           SwipeDirection.down,

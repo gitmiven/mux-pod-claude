@@ -2,12 +2,12 @@ import 'dart:ui' show Offset;
 
 import 'tmux_parser.dart';
 
-/// スワイプ方向
+/// Swipe direction
 enum SwipeDirection { up, down, left, right }
 
-/// SwipeDirectionの方向反転
+/// SwipeDirection direction reversal
 extension SwipeDirectionExtension on SwipeDirection {
-  /// 反転した方向を返す（up↔down, left↔right）
+  /// Returns the reversed direction (up↔down, left↔right)
   SwipeDirection get inverted => switch (this) {
     SwipeDirection.up => SwipeDirection.down,
     SwipeDirection.down => SwipeDirection.up,
@@ -16,21 +16,21 @@ extension SwipeDirectionExtension on SwipeDirection {
   };
 }
 
-/// ペイン間の空間ナビゲーション
+/// Spatial navigation between panes
 ///
-/// TmuxPaneのleft/top/width/heightフィールド（文字単位）を使用して
-/// 隣接ペインを特定する。
+/// Uses TmuxPane's left/top/width/height fields (in character units) to
+/// identify adjacent panes.
 ///
-/// tmuxのペイン間には1カラム/1行のセパレータがあるため、
-/// 隣接ペインの座標は `current.left + current.width + 1` となる。
-/// 隣接判定に `>=` を使用することで、セパレータ幅に依存しない。
+/// Since tmux has a 1-column/1-row separator between panes,
+/// the adjacent pane's coordinate is `current.left + current.width + 1`.
+/// By using `>=` for adjacency checks, we avoid depending on separator width.
 class PaneNavigator {
-  /// 指定方向の隣接ペインを検索
+  /// Searches for an adjacent pane in the specified direction
   ///
-  /// [panes] 現在のウィンドウの全ペイン
-  /// [current] アクティブペイン
-  /// [direction] スワイプ方向
-  /// 見つからなければnullを返す
+  /// [panes] all panes in the current window
+  /// [current] active pane
+  /// [direction] swipe direction
+  /// Returns null if not found
   static TmuxPane? findAdjacentPane({
     required List<TmuxPane> panes,
     required TmuxPane current,
@@ -45,25 +45,25 @@ class PaneNavigator {
 
       switch (direction) {
         case SwipeDirection.right:
-          // 右方向: ペインの左端が現在ペインの右端以上 + 垂直方向の重なりあり
+          // Right direction: pane's left edge >= current pane's right edge + vertical overlap
           if (pane.left >= current.left + current.width &&
               _hasVerticalOverlap(current, pane)) {
             candidates.add(pane);
           }
         case SwipeDirection.left:
-          // 左方向: ペインの右端が現在ペインの左端以下 + 垂直方向の重なりあり
+          // Left direction: pane's right edge <= current pane's left edge + vertical overlap
           if (pane.left + pane.width <= current.left &&
               _hasVerticalOverlap(current, pane)) {
             candidates.add(pane);
           }
         case SwipeDirection.down:
-          // 下方向: ペインの上端が現在ペインの下端以上 + 水平方向の重なりあり
+          // Down direction: pane's top edge >= current pane's bottom edge + horizontal overlap
           if (pane.top >= current.top + current.height &&
               _hasHorizontalOverlap(current, pane)) {
             candidates.add(pane);
           }
         case SwipeDirection.up:
-          // 上方向: ペインの下端が現在ペインの上端以下 + 水平方向の重なりあり
+          // Up direction: pane's bottom edge <= current pane's top edge + horizontal overlap
           if (pane.top + pane.height <= current.top &&
               _hasHorizontalOverlap(current, pane)) {
             candidates.add(pane);
@@ -73,7 +73,7 @@ class PaneNavigator {
 
     if (candidates.isEmpty) return null;
 
-    // 最も近い候補を返す（重心間のマンハッタン距離）
+    // Returns the closest candidate (Manhattan distance between centroids)
     candidates.sort((a, b) {
       final distA = _manhattanDistance(current, a);
       final distB = _manhattanDistance(current, b);
@@ -83,7 +83,7 @@ class PaneNavigator {
     return candidates.first;
   }
 
-  /// 各方向に隣接ペインが存在するかのマップを返す
+  /// Returns a map indicating whether adjacent panes exist in each direction
   static Map<SwipeDirection, bool> getNavigableDirections({
     required List<TmuxPane> panes,
     required TmuxPane current,
@@ -99,9 +99,9 @@ class PaneNavigator {
     };
   }
 
-  /// 2本指スワイプのdelta(dx, dy)からスワイプ方向を判定
+  /// Detects swipe direction from two-finger swipe delta (dx, dy)
   ///
-  /// 移動量が[threshold]未満の場合はnullを返す
+  /// Returns null if movement is less than [threshold]
   static SwipeDirection? detectSwipeDirection(
     Offset delta, {
     double threshold = 50.0,
@@ -118,17 +118,17 @@ class PaneNavigator {
     return null;
   }
 
-  /// 垂直方向の重なりがあるか（水平移動時に使用）
+  /// Checks for vertical overlap (used during horizontal movement)
   static bool _hasVerticalOverlap(TmuxPane a, TmuxPane b) {
     return b.top < a.top + a.height && b.top + b.height > a.top;
   }
 
-  /// 水平方向の重なりがあるか（垂直移動時に使用）
+  /// Checks for horizontal overlap (used during vertical movement)
   static bool _hasHorizontalOverlap(TmuxPane a, TmuxPane b) {
     return b.left < a.left + a.width && b.left + b.width > a.left;
   }
 
-  /// 重心間のマンハッタン距離
+  /// Manhattan distance between centroids
   static double _manhattanDistance(TmuxPane a, TmuxPane b) {
     final aCenterX = a.left + a.width / 2.0;
     final aCenterY = a.top + a.height / 2.0;

@@ -3,7 +3,7 @@ import 'package:flutter_muxpod/services/tmux/tmux_parser.dart';
 import 'package:flutter_muxpod/theme/design_colors.dart';
 import 'package:flutter_muxpod/widgets/active_list_tile.dart';
 
-/// tmuxセッション用ListTile
+/// ListTile for tmux sessions
 class TmuxSessionTile extends StatelessWidget {
   final TmuxSession session;
   final bool isActive;
@@ -34,7 +34,7 @@ class TmuxSessionTile extends StatelessWidget {
   }
 }
 
-/// tmuxペイン用ListTile
+/// ListTile for tmux panes
 class TmuxPaneTile extends StatelessWidget {
   final TmuxPane pane;
   final String paneTitle;
@@ -144,7 +144,7 @@ class TmuxPaneTile extends StatelessWidget {
   }
 }
 
-/// tmuxウィンドウ用ListTile
+/// ListTile for tmux windows
 class TmuxWindowTile extends StatelessWidget {
   final TmuxWindow window;
   final bool isActive;

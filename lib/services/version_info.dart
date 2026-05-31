@@ -1,8 +1,8 @@
-/// ビルド時に注入されるバージョン情報を提供する。
+/// Provides version information injected at build time.
 ///
-/// 優先順位:
-/// 1. APP_VERSION (CIがリリースタグから設定)
-/// 2. GIT_REF (ブランチ名@コミットハッシュ)
+/// Priority order:
+/// 1. APP_VERSION (set by CI from release tag)
+/// 2. GIT_REF (branch name@commit hash)
 /// 3. 'UNKNOWN'
 class VersionInfo {
   static const String _appVersion = String.fromEnvironment('APP_VERSION');

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// HTMLデザイン仕様に基づくカラーパレット
+/// Color palette based on HTML design specification
 class DesignColors {
   DesignColors._();
 
   // Primary Colors
   static const primary = Color(0xFF00C0D1);
   static const primaryDark = Color(0xFF009AA8);
-  static const secondary = Color(0xFFF59E0B); // オレンジ/アンバー
+  static const secondary = Color(0xFFF59E0B); // Orange/Amber
 
   // Background Colors
   static const backgroundDark = Color(0xFF0E0E11);

@@ -4,28 +4,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'trusted_host_identity.dart';
 
-/// 信頼済みホスト識別子の永続化境界（DIP: 注入可能な抽象）。
+/// Persistence boundary for trusted host identifiers (DIP: dependency injection principle, injectable abstraction).
 ///
-/// エンドポイント（`host:port`）ごとに1件の [TrustedHostIdentity] を保存・取得・削除する。
+/// Stores, retrieves, and removes one [TrustedHostIdentity] per endpoint (`host:port`).
 abstract class TrustedHostStore {
-  /// 指定エンドポイントの信頼済み identity を返す（無ければ null = 初回接続）。
+  /// Returns the trusted identity for the specified endpoint (null if none = first connection).
   Future<TrustedHostIdentity?> get(String host, int port);
 
-  /// 保存済みの全 identity を返す。
+  /// Returns all stored identities.
   Future<List<TrustedHostIdentity>> getAll();
 
-  /// identity を upsert する（`endpointKey` で既存を置換）。
+  /// Upserts an identity (replaces existing entry via `endpointKey`).
   Future<void> save(TrustedHostIdentity identity);
 
-  /// 指定エンドポイントの identity を忘れる（FR-009）。
+  /// Removes the identity for the specified endpoint (FR-009).
   Future<void> remove(String host, int port);
 }
 
-/// `shared_preferences` 上に実装した [TrustedHostStore]。
+/// Implementation of [TrustedHostStore] using `shared_preferences`.
 ///
-/// フィンガープリントは秘密情報ではない公開データのため、`flutter_secure_storage` ではなく
-/// 専用キー `trusted_host_identities` 配下に独立した名前空間で保持する（FR-010）。
-/// 接続リスト（`connections`）とは混在させず、ログにも出力しない。
+/// Fingerprints are public data and not secrets, so they are stored in a dedicated key `trusted_host_identities`
+/// with an independent namespace rather than in `flutter_secure_storage` (FR-010).
+/// They are kept separate from the connection list (`connections`) and not logged.
 class SharedPrefsTrustedHostStore implements TrustedHostStore {
   static const String storageKey = 'trusted_host_identities';
 

@@ -10,7 +10,7 @@ import '../services/tmux/tmux_parser.dart';
 import 'ssh_provider.dart';
 import 'tmux_provider.dart';
 
-/// ファイルブラウザの状態
+/// File browser state
 class FileBrowserState {
   final String currentPath;
   final List<FileEntry> entries;
@@ -50,7 +50,7 @@ class FileBrowserState {
     );
   }
 
-  /// ソート・フィルタ適用済みのエントリ一覧
+  /// List of entries with sort/filter applied
   List<FileEntry> get displayEntries {
     final service = _cachedBrowserService;
     final filtered = service.filterHidden(entries, showHidden);
@@ -60,17 +60,17 @@ class FileBrowserState {
   static final _cachedBrowserService = SftpBrowserService();
 }
 
-/// ファイルブラウザのNotifier
+/// File browser Notifier
 ///
-/// tmuxペインに1:1で紐づき、ペインのCWDを初期ディレクトリとして使用する。
-/// AutoDisposeNotifier を使用し、画面を閉じたら自動的に破棄される。
+/// Tied 1:1 to a tmux pane, using the pane's CWD as the initial directory.
+/// Uses AutoDisposeNotifier and is automatically destroyed when the screen is closed.
 class FileBrowserNotifier extends Notifier<FileBrowserState> {
   final SftpBrowserService _browserService = SftpBrowserService();
 
-  /// 並走対策用バージョン番号
+  /// Version number for race condition prevention
   int _listVersion = 0;
 
-  /// SSH接続状態監視
+  /// SSH connection state monitoring
   StreamSubscription<SshConnectionState>? _connectionSub;
 
   @override
@@ -81,37 +81,37 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
     return const FileBrowserState();
   }
 
-  /// ファイルブラウザを初期化
+  /// Initialize file browser
   ///
-  /// [paneId] に紐づくペインのCWDを初期ディレクトリとして使用する。
-  /// CWDが取得できない場合はホームディレクトリにフォールバック。
+  /// Uses the CWD of the pane associated with [paneId] as the initial directory.
+  /// Falls back to home directory if CWD cannot be retrieved.
   Future<void> initialize(String? paneId) async {
-    // 前回のエラー状態をクリア
+    // Clear previous error state
     _log('initialize START (paneId=$paneId)');
     state = const FileBrowserState();
 
     final tmuxState = ref.read(tmuxProvider);
     String? initialPath;
 
-    // ペインのCWDを取得
+    // Get the pane's CWD
     if (paneId != null) {
       final pane = _findPaneById(tmuxState, paneId);
       initialPath = pane?.currentPath;
     }
 
-    // SSH接続状態を監視
+    // Monitor SSH connection state
     _startConnectionMonitoring();
 
-    // 初期ディレクトリを決定
+    // Determine initial directory
     if (initialPath != null && initialPath.isNotEmpty) {
       await loadDirectory(initialPath);
     } else {
-      // ホームディレクトリにフォールバック
+      // Fall back to home directory
       await _loadHomeDirectory();
     }
   }
 
-  /// ディレクトリを読み込み
+  /// Load directory
   Future<void> loadDirectory(String path) async {
     final version = ++_listVersion;
     _log('loadDirectory START (path=$path, version=$version)');
@@ -131,7 +131,7 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
       final entries = await _browserService.listDirectory(sftp, path);
       _log('loadDirectory listDirectory OK (entries=${entries.length})');
 
-      // 並走対策: 古いリクエストの結果は破棄
+      // Race condition prevention: discard results from old requests
       if (version != _listVersion) {
         _log('loadDirectory STALE (version=$version, current=$_listVersion)');
         return;
@@ -152,12 +152,12 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
     }
   }
 
-  /// 子ディレクトリに遷移
+  /// Navigate to subdirectory
   Future<void> navigateToDirectory(String path) async {
     await loadDirectory(path);
   }
 
-  /// 親ディレクトリに遷移
+  /// Navigate to parent directory
   Future<void> navigateUp() async {
     final parent = _getParentPath(state.currentPath);
     if (parent != state.currentPath) {
@@ -165,7 +165,7 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
     }
   }
 
-  /// ソートオプションを変更
+  /// Change sort option
   void setSort(SortOption option, {bool? ascending}) {
     if (option == state.sortOption && ascending == null) {
       state = state.copyWith(sortAscending: !state.sortAscending);
@@ -177,12 +177,12 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
     }
   }
 
-  /// 隠しファイル表示を切り替え
+  /// Toggle hidden file display
   void toggleShowHidden() {
     state = state.copyWith(showHidden: !state.showHidden);
   }
 
-  /// ファイルまたはディレクトリを削除
+  /// Delete file or directory
   Future<bool> delete(FileEntry entry) async {
     _log('delete START (path=${entry.fullPath})');
     try {
@@ -205,7 +205,7 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
     return true;
   }
 
-  /// ファイルまたはディレクトリの名前を変更
+  /// Rename file or directory
   Future<bool> rename(FileEntry entry, String newName) async {
     _log('rename START (path=${entry.fullPath}, newName=$newName)');
     try {
@@ -229,7 +229,7 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
     return true;
   }
 
-  /// 新規フォルダを作成
+  /// Create new folder
   Future<bool> createDirectory(String name) async {
     _log('createDirectory START (name=$name)');
     try {
@@ -252,7 +252,7 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
     return true;
   }
 
-  /// 現在のディレクトリをリロード
+  /// Reload current directory
   Future<void> refresh() async {
     await loadDirectory(state.currentPath);
   }
@@ -336,7 +336,7 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
   }
 }
 
-/// ファイルブラウザ Provider
+/// File browser Provider
 final fileBrowserProvider =
     NotifierProvider<FileBrowserNotifier, FileBrowserState>(
   FileBrowserNotifier.new,

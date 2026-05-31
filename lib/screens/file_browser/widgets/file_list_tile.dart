@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../services/sftp/file_entry.dart';
 import '../../../theme/design_colors.dart';
 
-/// ファイル/ディレクトリ一覧のListTile
+/// ListTile for file/directory list
 class FileListTile extends StatelessWidget {
   final FileEntry entry;
   final VoidCallback onTap;

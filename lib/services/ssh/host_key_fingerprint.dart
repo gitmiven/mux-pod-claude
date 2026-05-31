@@ -1,17 +1,19 @@
 import 'dart:typed_data';
 
-/// SSHホスト鍵のフィンガープリント表現を扱うヘルパー。
+/// Helper for handling SSH host key fingerprint representations.
 ///
-/// dartssh2 の `onVerifyHostKey(type, fingerprint)` が渡す `fingerprint` は
-/// ホスト鍵の **MD5ダイジェスト**（生バイト）である。これを OpenSSH 互換の
-/// 人間が比較可能な形式 `MD5:xx:xx:...`（小文字16進をコロン区切り）に整形する。
+/// The `fingerprint` passed by dartssh2's `onVerifyHostKey(type, fingerprint)`
+/// is the **MD5 digest** (raw bytes) of the host key. This formats it into
+/// an OpenSSH-compatible human-comparable format `MD5:xx:xx:...` (lowercase
+/// hexadecimal separated by colons).
 ///
-/// 注: 生のホスト鍵バイトはコールバックに渡されないため、ここで SHA256 は計算できない。
-/// 出力は `ssh-keygen -l -E md5` の表示と比較可能で、帯域外検証に利用できる。
+/// Note: Since the raw host key bytes are not passed to the callback, SHA256
+/// cannot be computed here. The output is comparable to `ssh-keygen -l -E md5`
+/// display and can be used for out-of-band verification.
 class HostKeyFingerprint {
   const HostKeyFingerprint._();
 
-  /// MD5ダイジェストのバイト列を `MD5:xx:xx:...` 形式の文字列に整形する。
+  /// Formats an MD5 digest byte sequence into a string in `MD5:xx:xx:...` format.
   static String formatMd5(Uint8List digest) {
     final hex = digest
         .map((b) => b.toRadixString(16).padLeft(2, '0'))

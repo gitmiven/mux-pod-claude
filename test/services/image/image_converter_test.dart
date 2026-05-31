@@ -81,7 +81,7 @@ void main() {
         0x6D, 0x70, 0x34, 0x31, // "mp41"
         ...List.filled(20, 0),
       ]);
-      expect(ImageConverter.detectExtension(bytes), 'png'); // デフォルト
+      expect(ImageConverter.detectExtension(bytes), 'png'); // default
     });
 
     test('does not detect HEIC from non-HEIF ftyp (isom)', () {
@@ -91,7 +91,7 @@ void main() {
         0x69, 0x73, 0x6F, 0x6D, // "isom"
         ...List.filled(20, 0),
       ]);
-      expect(ImageConverter.detectExtension(bytes), 'png'); // デフォルト
+      expect(ImageConverter.detectExtension(bytes), 'png'); // default
     });
 
     test('returns png for bytes too short for ftyp detection', () {

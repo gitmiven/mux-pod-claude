@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// 設定マイグレーションの基底クラス
+/// Base class for settings migration
 abstract class SettingsMigration {
   int get version;
   Future<void> migrate(SharedPreferences prefs);
@@ -33,7 +33,7 @@ class MigrateAutoFitToAdjustMode extends SettingsMigration {
   }
 }
 
-/// マイグレーションランナー
+/// Migration runner
 class SettingsMigrationRunner {
   static const String _versionKey = 'settings_migration_version';
 

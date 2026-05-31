@@ -1,18 +1,18 @@
 import 'package:flutter/foundation.dart';
 
-/// tmuxコマンド出力パーサー
+/// tmux command output parser
 ///
-/// tmuxコマンドの出力をパースしてオブジェクトに変換する。
-/// フォーマット文字列に対応したパーサーを提供。
+/// Parses tmux command output and converts it to objects.
+/// Provides parsers for format strings.
 class TmuxParser {
-  /// デフォルトのフィールド区切り文字（SSH経由でタブが変換されるため|||を使用）
+  /// Default field delimiter (uses ||| because tabs are converted over SSH)
   static const String defaultDelimiter = '|||';
 
-  // ===== セッション =====
+  // ===== Sessions =====
 
-  /// セッション一覧をパース
+  /// Parse session list
   ///
-  /// 対応フォーマット: `#{session_name}\t#{session_created}\t#{session_attached}\t#{session_windows}\t#{session_id}`
+  /// Supported format: `#{session_name}\t#{session_created}\t#{session_attached}\t#{session_windows}\t#{session_id}`
   static List<TmuxSession> parseSessions(String output, {String delimiter = defaultDelimiter}) {
     debugPrint('parseSessions: raw output="${output.trim()}"');
     if (!isServerRunning(output)) {
@@ -35,10 +35,10 @@ class TmuxParser {
     return sessions;
   }
 
-  /// 単一のセッション行をパース
+  /// Parse a single session line
   static TmuxSession? parseSessionLine(String line, {String delimiter = defaultDelimiter}) {
     final parts = line.split(delimiter);
-    // 区切り文字が含まれない行はtmux出力ではない（シェルエラー等）
+    // Lines without delimiter are not tmux output (shell errors, etc.)
     if (parts.length < 2) return null;
 
     final name = parts[0];
@@ -53,9 +53,9 @@ class TmuxParser {
     );
   }
 
-  /// 簡易フォーマットでセッションをパース
+  /// Parse session in simplified format
   ///
-  /// フォーマット: `#{session_name}:#{session_windows}:#{session_attached}`
+  /// Format: `#{session_name}:#{session_windows}:#{session_attached}`
   static List<TmuxSession> parseSessionsSimple(String output) {
     if (!isServerRunning(output)) return [];
 
@@ -78,11 +78,11 @@ class TmuxParser {
     return sessions;
   }
 
-  // ===== ウィンドウ =====
+  // ===== Windows =====
 
-  /// ウィンドウ一覧をパース
+  /// Parse window list
   ///
-  /// 対応フォーマット: `#{window_index}\t#{window_id}\t#{window_name}\t#{window_active}\t#{window_panes}\t#{window_flags}`
+  /// Supported format: `#{window_index}\t#{window_id}\t#{window_name}\t#{window_active}\t#{window_panes}\t#{window_flags}`
   static List<TmuxWindow> parseWindows(String output, {String delimiter = defaultDelimiter}) {
     final windows = <TmuxWindow>[];
 
@@ -99,7 +99,7 @@ class TmuxParser {
     return windows;
   }
 
-  /// 単一のウィンドウ行をパース
+  /// Parse a single window line
   static TmuxWindow? parseWindowLine(String line, {String delimiter = defaultDelimiter}) {
     final parts = line.split(delimiter);
     if (parts.isEmpty) return null;
@@ -117,9 +117,9 @@ class TmuxParser {
     );
   }
 
-  /// 簡易フォーマットでウィンドウをパース
+  /// Parse window in simplified format
   ///
-  /// フォーマット: `#{window_index}:#{window_name}:#{window_active}:#{window_panes}`
+  /// Format: `#{window_index}:#{window_name}:#{window_active}:#{window_panes}`
   static List<TmuxWindow> parseWindowsSimple(String output) {
     final windows = <TmuxWindow>[];
 
@@ -141,11 +141,11 @@ class TmuxParser {
     return windows;
   }
 
-  // ===== ペイン =====
+  // ===== Panes =====
 
-  /// ペイン一覧をパース
+  /// Parse pane list
   ///
-  /// 対応フォーマット: `#{pane_index}\t#{pane_id}\t#{pane_active}\t#{pane_current_command}\t#{pane_title}\t#{pane_width}\t#{pane_height}\t#{cursor_x}\t#{cursor_y}`
+  /// Supported format: `#{pane_index}\t#{pane_id}\t#{pane_active}\t#{pane_current_command}\t#{pane_title}\t#{pane_width}\t#{pane_height}\t#{cursor_x}\t#{cursor_y}`
   static List<TmuxPane> parsePanes(String output, {String delimiter = defaultDelimiter}) {
     final panes = <TmuxPane>[];
 
@@ -162,7 +162,7 @@ class TmuxParser {
     return panes;
   }
 
-  /// 単一のペイン行をパース
+  /// Parse a single pane line
   static TmuxPane? parsePaneLine(String line, {String delimiter = defaultDelimiter}) {
     final parts = line.split(delimiter);
     if (parts.length < 2) return null;
@@ -186,9 +186,9 @@ class TmuxParser {
     );
   }
 
-  /// 簡易フォーマットでペインをパース
+  /// Parse pane in simplified format
   ///
-  /// フォーマット: `#{pane_index}:#{pane_id}:#{pane_active}:#{pane_width}x#{pane_height}`
+  /// Format: `#{pane_index}:#{pane_id}:#{pane_active}:#{pane_width}x#{pane_height}`
   static List<TmuxPane> parsePanesSimple(String output) {
     final panes = <TmuxPane>[];
 
@@ -212,13 +212,13 @@ class TmuxParser {
     return panes;
   }
 
-  // ===== ペインコンテンツ =====
+  // ===== Pane content =====
 
-  /// capture-pane出力をパース（ANSIエスケープ付き）
+  /// Parse capture-pane output (with ANSI escape codes)
   static TmuxPaneContent parsePaneContent(String output, {int? width, int? height}) {
     final lines = output.split('\n');
 
-    // 末尾の空行を削除
+    // Remove trailing blank lines
     while (lines.isNotEmpty && lines.last.trim().isEmpty) {
       lines.removeLast();
     }
@@ -231,17 +231,17 @@ class TmuxParser {
     );
   }
 
-  /// capture-pane出力からプレーンテキストを抽出
+  /// Extract plain text from capture-pane output
   static String stripAnsiCodes(String text) {
-    // ANSIエスケープシーケンスを削除
+    // Remove ANSI escape sequences
     return text.replaceAll(RegExp(r'\x1b\[[0-9;]*[a-zA-Z]'), '');
   }
 
-  // ===== 完全なセッションツリー =====
+  // ===== Full session tree =====
 
-  /// セッションツリー全体をパース
+  /// Parse entire session tree
   ///
-  /// `tmux list-panes -a -F "..."`の出力から完全なツリーを構築
+  /// Builds a complete tree from `tmux list-panes -a -F "..."` output
   static List<TmuxSession> parseFullTree(String output, {String delimiter = defaultDelimiter}) {
     debugPrint('parseFullTree: raw output="${output.trim()}"');
     if (!isServerRunning(output)) {
@@ -259,9 +259,9 @@ class TmuxParser {
       final parts = trimmed.split(delimiter);
       if (parts.length < 10) continue;
 
-      // フォーマット: session_name, session_id, window_index, window_id, window_name, window_active,
-      //              pane_index, pane_id, pane_active, pane_width, pane_height, pane_left, pane_top,
-      //              pane_title, pane_current_command, cursor_x, cursor_y
+      // Format: session_name, session_id, window_index, window_id, window_name, window_active,
+      //         pane_index, pane_id, pane_active, pane_width, pane_height, pane_left, pane_top,
+      //         pane_title, pane_current_command, cursor_x, cursor_y
       final sessionName = parts[0];
       final sessionId = parts[1];
       final windowIndex = int.tryParse(parts[2]) ?? 0;
@@ -281,7 +281,7 @@ class TmuxParser {
       final cursorY = parts.length > 16 ? int.tryParse(parts[16]) ?? 0 : 0;
       final paneCurrentPath = parts.length > 17 && parts[17].isNotEmpty ? parts[17] : null;
 
-      // セッションを取得または作成
+      // Get or create session
       sessionsMap.putIfAbsent(
         sessionName,
         () => TmuxSession(name: sessionName, id: sessionId),
@@ -289,11 +289,11 @@ class TmuxParser {
 
       final windowFlags = parts.length > 18 ? _parseWindowFlags(parts[18]) : const <TmuxWindowFlag>{};
 
-      // ウィンドウマップを取得または作成
+      // Get or create window map
       windowsMap.putIfAbsent(sessionName, () => {});
       final windows = windowsMap[sessionName]!;
 
-      // ウィンドウを取得または作成
+      // Get or create window
       windows.putIfAbsent(
         windowIndex,
         () => TmuxWindow(
@@ -305,7 +305,7 @@ class TmuxParser {
         ),
       );
 
-      // ペインを追加
+      // Add pane
       windows[windowIndex]!.panes.add(TmuxPane(
         index: paneIndex,
         id: paneId,
@@ -322,7 +322,7 @@ class TmuxParser {
       ));
     }
 
-    // ツリーを構築
+    // Build tree
     final sessions = <TmuxSession>[];
     for (final entry in sessionsMap.entries) {
       final session = entry.value;
@@ -337,16 +337,16 @@ class TmuxParser {
     return sessions;
   }
 
-  // ===== ユーティリティ =====
+  // ===== Utilities =====
 
-  /// Unixタイムスタンプをパース
+  /// Parse Unix timestamp
   static DateTime? _parseTimestamp(String value) {
     final seconds = int.tryParse(value);
     if (seconds == null) return null;
     return DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
   }
 
-  /// サイズ文字列をパース（例: "80x24"）
+  /// Parse size string (e.g., "80x24")
   static ({int width, int height}) _parseSize(String value) {
     final parts = value.split('x');
     return (
@@ -355,7 +355,7 @@ class TmuxParser {
     );
   }
 
-  /// ウィンドウフラグをパース
+  /// Parse window flags
   static Set<TmuxWindowFlag> _parseWindowFlags(String flags) {
     final result = <TmuxWindowFlag>{};
     if (flags.contains('*')) result.add(TmuxWindowFlag.current);
@@ -368,7 +368,7 @@ class TmuxParser {
     return result;
   }
 
-  /// 行から幅を推測
+  /// Guess width from lines
   static int _guessWidth(List<String> lines) {
     if (lines.isEmpty) return 80;
     int maxWidth = 0;
@@ -381,7 +381,7 @@ class TmuxParser {
     return maxWidth > 0 ? maxWidth : 80;
   }
 
-  /// tmuxが実行中かチェック（サーバー起動確認）
+  /// Check if tmux is running (verify server startup)
   static bool isServerRunning(String output) {
     final lower = output.toLowerCase();
     return !lower.contains('no server running') &&
@@ -392,7 +392,7 @@ class TmuxParser {
         !lower.contains('permission denied');
   }
 
-  /// エラーメッセージを抽出
+  /// Extract error message
   static String? extractError(String output) {
     final lower = output.toLowerCase();
     if (lower.contains('no server running')) {
@@ -408,7 +408,7 @@ class TmuxParser {
       return 'Pane not found';
     }
     if (lower.contains('error')) {
-      // 最初のエラー行を返す
+      // Return first error line
       for (final line in output.split('\n')) {
         if (line.toLowerCase().contains('error')) {
           return line.trim();
@@ -419,20 +419,20 @@ class TmuxParser {
   }
 }
 
-// ===== データモデル =====
+// ===== Data models =====
 
-/// ウィンドウフラグ
+/// Window flags
 enum TmuxWindowFlag {
-  current,  // * - 現在のウィンドウ
-  last,     // - - 最後にアクティブだったウィンドウ
-  activity, // # - アクティビティ検出
-  bell,     // ! - ベル検出
-  silence,  // ~ - 無音検出
-  marked,   // M - マーク
-  zoomed,   // Z - ズーム
+  current,  // * - Current window
+  last,     // - - Last active window
+  activity, // # - Activity detected
+  bell,     // ! - Bell detected
+  silence,  // ~ - Silence detected
+  marked,   // M - Marked
+  zoomed,   // Z - Zoomed
 }
 
-/// tmuxセッション
+/// tmux session
 class TmuxSession {
   final String name;
   final String? id;
@@ -468,7 +468,7 @@ class TmuxSession {
     );
   }
 
-  /// セッションのターゲット文字列を取得
+  /// Get session target string
   String get target => name;
 
   @override
@@ -483,7 +483,7 @@ class TmuxSession {
   int get hashCode => name.hashCode;
 }
 
-/// tmuxウィンドウ
+/// tmux window
 class TmuxWindow {
   final int index;
   final String? id;
@@ -523,13 +523,13 @@ class TmuxWindow {
     );
   }
 
-  /// ウィンドウのターゲット文字列を取得
+  /// Get window target string
   String target(String sessionName) => '$sessionName:$index';
 
-  /// 現在のウィンドウかどうか
+  /// Whether this is the current window
   bool get isCurrent => flags.contains(TmuxWindowFlag.current);
 
-  /// ズームされているかどうか
+  /// Whether the window is zoomed
   bool get isZoomed => flags.contains(TmuxWindowFlag.zoomed);
 
   @override
@@ -544,7 +544,7 @@ class TmuxWindow {
   int get hashCode => Object.hash(index, id);
 }
 
-/// tmuxペイン
+/// tmux pane
 class TmuxPane {
   final int index;
   final String id;
@@ -604,10 +604,10 @@ class TmuxPane {
     );
   }
 
-  /// ペインのターゲット文字列を取得
+  /// Get pane target string
   String get target => id;
 
-  /// サイズを "80x24" 形式で取得
+  /// Get size in "80x24" format
   String get sizeString => '${width}x$height';
 
   @override
@@ -622,7 +622,7 @@ class TmuxPane {
   int get hashCode => id.hashCode;
 }
 
-/// ペインコンテンツ
+/// Pane content
 class TmuxPaneContent {
   final List<String> lines;
   final int width;
@@ -636,7 +636,7 @@ class TmuxPaneContent {
     this.hasAnsiColors = false,
   });
 
-  /// プレーンテキストを取得
+  /// Get plain text
   String get plainText {
     if (!hasAnsiColors) {
       return lines.join('\n');
@@ -644,17 +644,17 @@ class TmuxPaneContent {
     return lines.map(TmuxParser.stripAnsiCodes).join('\n');
   }
 
-  /// 生のテキストを取得（ANSIコード含む）
+  /// Get raw text (includes ANSI codes)
   String get rawText => lines.join('\n');
 
-  /// 空かどうか
+  /// Whether empty
   bool get isEmpty => lines.isEmpty || lines.every((line) => line.trim().isEmpty);
 
   @override
   String toString() => 'TmuxPaneContent(${width}x$height, ${lines.length} lines)';
 }
 
-// ===== 後方互換性のためのエイリアス =====
+// ===== Backward compatibility aliases =====
 
 /// @deprecated Use [TmuxSession] instead
 typedef TmuxSessionInfo = TmuxSession;

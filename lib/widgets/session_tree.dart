@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_muxpod/services/tmux/tmux_parser.dart';
 import 'package:flutter_muxpod/widgets/tmux_tiles.dart';
 
-/// tmuxセッションツリー表示Widget
-/// 仮想スクロール対応: ListView.builder + 遅延ウィジェット生成
+/// tmux session tree display Widget
+/// Virtual scroll support: ListView.builder + lazy widget generation
 class SessionTree extends StatelessWidget {
   final List<TmuxSession> sessions;
   final String? selectedPaneId;
@@ -54,7 +54,7 @@ class SessionTree extends StatelessWidget {
   }
 }
 
-/// セッションタイル（展開状態を管理して遅延生成）
+/// Session tile (manages expanded state and lazy generation)
 class _SessionTile extends StatefulWidget {
   final TmuxSession session;
   final String? selectedPaneId;
@@ -126,7 +126,7 @@ class _SessionTileState extends State<_SessionTile> {
   }
 }
 
-/// ウィンドウタイル（展開状態を管理して遅延生成）
+/// Window tile (manages expanded state and lazy generation)
 class _WindowTile extends StatefulWidget {
   final String sessionName;
   final TmuxWindow window;

@@ -1,24 +1,24 @@
-/// 信頼済みホスト識別子（TOFU: trust-on-first-use）。
+/// Trusted host identifier (TOFU: trust-on-first-use).
 ///
-/// あるサーバーエンドポイント（host:port）のホスト鍵 identity を信頼したという記録。
-/// エンドポイントごとに1件。接続時にこの記録と提示されたフィンガープリントを比較する。
+/// A record of trusting the host key identity for a server endpoint (host:port).
+/// One record per endpoint. On connection, the fingerprint presented is compared with this record.
 class TrustedHostIdentity {
-  /// 接続先ホスト名またはIP（[Connection] と同じ値）。
+  /// Destination host name or IP (same value as [Connection]).
   final String host;
 
-  /// SSHポート。`host:port` が identity のキー（spec: エンドポイント単位）。
+  /// SSH port. `host:port` is the identity key (spec: per-endpoint).
   final int port;
 
-  /// 人間が比較可能なホスト鍵フィンガープリント（例 `MD5:16:27:ac:...`）。
+  /// Human-comparable host key fingerprint (example `MD5:16:27:ac:...`).
   final String fingerprint;
 
-  /// ネゴシエートされたホスト鍵アルゴリズム（例 `ssh-ed25519`, `rsa-sha2-256`）。
+  /// Negotiated host key algorithm (example `ssh-ed25519`, `rsa-sha2-256`).
   final String keyType;
 
-  /// 初めて信頼した日時。
+  /// Date and time when first trusted.
   final DateTime firstTrustedAt;
 
-  /// 直近で一致を確認した日時。
+  /// Date and time of most recent verification.
   final DateTime lastVerifiedAt;
 
   const TrustedHostIdentity({
@@ -30,7 +30,7 @@ class TrustedHostIdentity {
     required this.lastVerifiedAt,
   });
 
-  /// エンドポイントキー（`host:port`）。
+  /// Endpoint key (`host:port`).
   String get endpointKey => '$host:$port';
 
   TrustedHostIdentity copyWith({
