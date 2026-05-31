@@ -143,7 +143,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
                     size: 18,
                   ),
                   const SizedBox(width: 8),
-                  Text(state.sortAscending ? '昇順' : '降順'),
+                  Text(state.sortAscending ? 'Ascending' : 'Descending'),
                 ],
               ),
             ),
@@ -162,7 +162,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('読み込み中...'),
+              Text('Loading...'),
             ],
           ),
         ),
@@ -185,7 +185,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'エラーが発生しました',
+                  'An error occurred',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -205,7 +205,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
                 ElevatedButton.icon(
                   onPressed: () => ref.read(fileBrowserProvider.notifier).refresh(),
                   icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('再試行'),
+                  label: const Text('Retry'),
                 ),
               ],
             ),
@@ -230,7 +230,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'このディレクトリは空です',
+                'This directory is empty',
                 style: TextStyle(
                   fontSize: 15,
                   color: isDark ? DesignColors.textMuted : DesignColors.textMutedLight,
@@ -307,7 +307,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
     final newName = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('名前を変更'),
+        title: const Text('Rename'),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -322,11 +322,11 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('キャンセル'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('変更'),
+            child: const Text('Rename'),
           ),
         ],
       ),
@@ -339,7 +339,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success ? '名前を変更しました' : '名前の変更に失敗しました'),
+            content: Text(success ? 'Renamed' : 'Failed to rename'),
             backgroundColor: success ? DesignColors.success : DesignColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -352,19 +352,19 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('削除の確認'),
+        title: const Text('Confirm deletion'),
         content: Text(
-          '${entry.isDirectory ? "ディレクトリ" : "ファイル"} "${entry.name}" を削除しますか？\nこの操作は取り消せません。',
+          '${entry.isDirectory ? "directory" : "file"} "${entry.name}" — delete this?\nThis cannot be undone.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('キャンセル'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: DesignColors.error),
-            child: const Text('削除'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -375,7 +375,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success ? '削除しました' : '削除に失敗しました'),
+            content: Text(success ? 'Deleted' : 'Failed to delete'),
             backgroundColor: success ? DesignColors.success : DesignColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -391,12 +391,12 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
     final name = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('新しいフォルダ'),
+        title: const Text('New folder'),
         content: TextField(
           controller: controller,
           autofocus: true,
           decoration: const InputDecoration(
-            hintText: 'フォルダ名',
+            hintText: 'Folder name',
             border: OutlineInputBorder(),
           ),
           style: TextStyle(
@@ -407,11 +407,11 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('キャンセル'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('作成'),
+            child: const Text('Create'),
           ),
         ],
       ),
@@ -424,7 +424,7 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success ? 'フォルダを作成しました' : 'フォルダの作成に失敗しました'),
+            content: Text(success ? 'Folder created' : 'Failed to create folder'),
             backgroundColor: success ? DesignColors.success : DesignColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -435,10 +435,10 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
 
   String _sortOptionLabel(SortOption option) {
     return switch (option) {
-      SortOption.name => '名前',
-      SortOption.size => 'サイズ',
-      SortOption.date => '更新日時',
-      SortOption.type => '種類',
+      SortOption.name => 'Name',
+      SortOption.size => 'Size',
+      SortOption.date => 'Modified',
+      SortOption.type => 'Type',
     };
   }
 }
