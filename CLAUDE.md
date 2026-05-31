@@ -111,6 +111,7 @@ class TmuxPane {
 - Dart 3.x / Flutter 3.24+ + flutter_riverpod (state management), xterm (terminal display), dartssh2 (SSH connection) (001-terminal-width-resize)
 
 ## Recent Changes
+- 012-coexist-app-id: Gave this Claude-focused fork its own app identity so it installs alongside upstream `moezakura/mux-pod` — Android `applicationId` `si.mox.mux_pod_claude` (was `si.mox.mux_pod`), home-screen name "MuxPod Claude" (Android label + iOS `CFBundleDisplayName`).
 
 - 011-terminal-tests: Added the first terminal characterization tests (+13): `SpecialKeysBar` modifier/special-key behavior and `AnsiTextView` hardware-key handling, driven through the widgets' public callbacks (no SSH harness). Silenced `AppLog` in tests. Suite 335→348.
 - 010-hygiene: Set a real `pubspec.yaml` description; pruned the unused `web/linux/macos/windows` platform scaffolding (the app targets Android + iOS only); added `specs/README.md` mapping the feature timeline and the 001/002 numbering collisions.

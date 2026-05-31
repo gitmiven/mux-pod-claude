@@ -30,7 +30,9 @@ android {
     }
 
     defaultConfig {
-        applicationId = "si.mox.mux_pod"
+        // Distinct from upstream's `si.mox.mux_pod` so this Claude-focused fork
+        // installs alongside the original instead of conflicting with it.
+        applicationId = "si.mox.mux_pod_claude"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
