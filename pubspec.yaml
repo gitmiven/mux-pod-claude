@@ -1,5 +1,5 @@
 name: flutter_muxpod
-description: "A new Flutter project."
+description: "MuxPod — a mobile tmux client: browse and operate remote tmux sessions, windows, and panes over SSH from your phone. Optimized for Claude Code."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

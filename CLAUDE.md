@@ -112,6 +112,7 @@ class TmuxPane {
 
 ## Recent Changes
 
+- 010-hygiene: Set a real `pubspec.yaml` description; pruned the unused `web/linux/macos/windows` platform scaffolding (the app targets Android + iOS only); added `specs/README.md` mapping the feature timeline and the 001/002 numbering collisions.
 - 009-decompose-large-files: Decomposed the next god-files (behavior-identical). `connections_screen.dart` 1,180→494 (extracted 4 widget classes to `widgets/`); `ansi_text_view.dart` 1,399→472 (extracted gesture recognizer; `AnsiTextViewState` → Logic/View part-file mixins); `special_keys_bar.dart` 1,064→107 (`_SpecialKeysBarState` → Logic/View mixins).
 - 008-logging-utility: Added a level-gated, release-safe logger (`lib/services/logging/app_log.dart`, `AppLog`); routed all ~84 ad-hoc `debugPrint`/`developer.log` sites through it; stopped logging raw SSH command stdout/stderr and raw tmux output (log byte counts only) to prevent secret leakage.
 - 007-decompose-terminal-screen: Broke up the `terminal_screen.dart` god-widget (4,527 → 389 lines), behavior-identical. Slice 1: extracted 7 helper classes (painters, dialogs, pane-layout visualizer) into `lib/screens/terminal/widgets/`. Slice 2: split `_TerminalScreenState` into `part`-file mixins — `_TerminalScreenLogic` (fields + engine) and `_TerminalScreenView` (build helpers/dialogs).
