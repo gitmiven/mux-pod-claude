@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import '../logging/app_log.dart';
 
 /// tmux command output parser
 ///
@@ -14,9 +14,9 @@ class TmuxParser {
   ///
   /// Supported format: `#{session_name}\t#{session_created}\t#{session_attached}\t#{session_windows}\t#{session_id}`
   static List<TmuxSession> parseSessions(String output, {String delimiter = defaultDelimiter}) {
-    debugPrint('parseSessions: raw output="${output.trim()}"');
+    AppLog.d('parseSessions: ${output.length}B raw output');
     if (!isServerRunning(output)) {
-      debugPrint('parseSessions: isServerRunning=false, returning empty');
+      AppLog.d('parseSessions: isServerRunning=false, returning empty');
       return [];
     }
 
@@ -243,9 +243,9 @@ class TmuxParser {
   ///
   /// Builds a complete tree from `tmux list-panes -a -F "..."` output
   static List<TmuxSession> parseFullTree(String output, {String delimiter = defaultDelimiter}) {
-    debugPrint('parseFullTree: raw output="${output.trim()}"');
+    AppLog.d('parseFullTree: ${output.length}B raw output');
     if (!isServerRunning(output)) {
-      debugPrint('parseFullTree: isServerRunning=false, returning empty');
+      AppLog.d('parseFullTree: isServerRunning=false, returning empty');
       return [];
     }
 

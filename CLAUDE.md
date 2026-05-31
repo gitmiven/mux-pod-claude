@@ -112,6 +112,7 @@ class TmuxPane {
 
 ## Recent Changes
 
+- 008-logging-utility: Added a level-gated, release-safe logger (`lib/services/logging/app_log.dart`, `AppLog`); routed all ~84 ad-hoc `debugPrint`/`developer.log` sites through it; stopped logging raw SSH command stdout/stderr and raw tmux output (log byte counts only) to prevent secret leakage.
 - 007-decompose-terminal-screen: Broke up the `terminal_screen.dart` god-widget (4,527 → 389 lines), behavior-identical. Slice 1: extracted 7 helper classes (painters, dialogs, pane-layout visualizer) into `lib/screens/terminal/widgets/`. Slice 2: split `_TerminalScreenState` into `part`-file mixins — `_TerminalScreenLogic` (fields + engine) and `_TerminalScreenView` (build helpers/dialogs).
 - 006-pr-validation-ci: GitHub Actions CI (`flutter analyze` + `flutter test`) on PRs/main, Flutter pinned; made the suite green (bundled JetBrains Mono for tests, fixed a set-state-after-dispose bug)
 - 005-translate-japanese-comments: Translated in-code comments to English across the codebase

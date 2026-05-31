@@ -1,7 +1,7 @@
-import 'dart:developer' as developer;
 
 import 'package:flutter/painting.dart';
 import 'terminal_font_styles.dart';
+import '../logging/app_log.dart';
 
 /// Font size calculation result
 typedef FontCalculateResult = ({double fontSize, bool needsScroll});
@@ -39,26 +39,26 @@ class FontCalculator {
     // T031: Fallback to default 80 if pane width is 0 or less
     int effectivePaneWidth = paneCharWidth;
     if (paneCharWidth <= 0) {
-      developer.log(
+      AppLog.d(
         'Invalid pane width ($paneCharWidth), using default: $defaultPaneWidth',
-        name: 'FontCalculator',
+        tag: 'FontCalculator',
       );
       effectivePaneWidth = defaultPaneWidth;
     }
     // T032: Clamp extremely narrow panes (less than 10 characters) to the minimum value
     else if (paneCharWidth < minPaneWidth) {
-      developer.log(
+      AppLog.d(
         'Narrow pane ($paneCharWidth chars), clamping to minimum: $minPaneWidth',
-        name: 'FontCalculator',
+        tag: 'FontCalculator',
       );
       effectivePaneWidth = minPaneWidth;
     }
 
     // Return default value if screen width is invalid
     if (screenWidth <= 0) {
-      developer.log(
+      AppLog.d(
         'Invalid screen width ($screenWidth), returning default font size',
-        name: 'FontCalculator',
+        tag: 'FontCalculator',
       );
       return (fontSize: defaultFontSize, needsScroll: false);
     }
@@ -78,12 +78,12 @@ class FontCalculator {
     }
 
     // T034: Log font size calculation result
-    developer.log(
+    AppLog.d(
       'Calculated: screen=${screenWidth.toStringAsFixed(1)}px, '
       'pane=${effectivePaneWidth}chars, '
       'fontSize=${result.fontSize.toStringAsFixed(2)}pt, '
       'scroll=${result.needsScroll}',
-      name: 'FontCalculator',
+      tag: 'FontCalculator',
     );
 
     return result;
@@ -123,9 +123,9 @@ class FontCalculator {
     // Store in cache
     _charWidthRatioCache[fontFamily] = ratio;
 
-    developer.log(
+    AppLog.d(
       'Cached char width ratio for "$fontFamily": $ratio',
-      name: 'FontCalculator',
+      tag: 'FontCalculator',
     );
 
     return ratio;

@@ -41,6 +41,7 @@ import 'widgets/new_window_dialog.dart';
 import 'widgets/pane_layout_visualizer.dart';
 import 'widgets/resize_pane_chooser_dialog.dart';
 import 'widgets/resize_window_chooser_dialog.dart';
+import '../../services/logging/app_log.dart';
 
 part 'terminal_screen_logic.dart';
 part 'terminal_screen_view.dart';

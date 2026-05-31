@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/keychain/secure_storage.dart';
@@ -6,6 +5,7 @@ import '../services/ssh/ssh_client.dart';
 import '../services/tmux/tmux_commands.dart';
 import '../services/tmux/tmux_parser.dart';
 import 'connection_provider.dart';
+import '../services/logging/app_log.dart';
 
 /// Notification pane information based on tmux window flags
 class AlertPane {
@@ -126,7 +126,7 @@ class AlertPanesNotifier extends Notifier<AlertPanesState> {
 
       await sshClient.disconnect();
     } catch (e) {
-      debugPrint('Failed to clear window flag: $e');
+      AppLog.d('Failed to clear window flag: $e');
     }
   }
 
@@ -186,7 +186,7 @@ class AlertPanesNotifier extends Notifier<AlertPanesState> {
 
         await sshClient.disconnect();
       } catch (e) {
-        debugPrint('Failed to fetch alert panes for ${connection.name}: $e');
+        AppLog.d('Failed to fetch alert panes for ${connection.name}: $e');
       }
     }
 

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../services/terminal/font_calculator.dart';
 import '../../services/tmux/tmux_parser.dart';
 import '../../theme/design_colors.dart';
+import '../../services/logging/app_log.dart';
 
 /// Resize result
 class ResizeResult {
@@ -85,7 +86,7 @@ class _ResizePaneDialogState extends State<ResizePaneDialog> {
   @override
   Widget build(BuildContext context) {
     final mediaSize = MediaQuery.of(context).size;
-    debugPrint('[ResizePaneDialog] build() mediaSize=$mediaSize '
+    AppLog.d('[ResizePaneDialog] build() mediaSize=$mediaSize '
         'allPanes=${widget.allPanesInWindow.length} '
         'target=${widget.targetPane.id} '
         'screenW=${widget.screenWidth} screenH=${widget.screenHeight} '

@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import 'package:flutter/services.dart';
+import '../logging/app_log.dart';
 
 /// Deep link parse result
 final class DeepLinkData {
@@ -55,14 +55,14 @@ final class DeepLinkService {
         final data = parseUri(initialUri);
         if (data.hasTarget) {
           _initialLink = data;
-          developer.log('Initial deep link: $data', name: _tag);
+          AppLog.d('Initial deep link: $data', tag: _tag);
         }
       }
     } on MissingPluginException {
       // Platform channel not implemented (e.g., during tests)
-      developer.log('Deep link channel not available', name: _tag);
+      AppLog.d('Deep link channel not available', tag: _tag);
     } catch (e) {
-      developer.log('Error getting initial link: $e', name: _tag);
+      AppLog.d('Error getting initial link: $e', tag: _tag);
     }
   }
 
@@ -72,7 +72,7 @@ final class DeepLinkService {
       if (uri != null) {
         final data = parseUri(uri);
         if (data.hasTarget) {
-          developer.log('Hot deep link received: $data', name: _tag);
+          AppLog.d('Hot deep link received: $data', tag: _tag);
           _linkController.add(data);
         }
       }
@@ -102,7 +102,7 @@ final class DeepLinkService {
         pane: pane,
       );
     } catch (e) {
-      developer.log('Failed to parse deep link URI: $e', name: _tag);
+      AppLog.d('Failed to parse deep link URI: $e', tag: _tag);
       return const DeepLinkData();
     }
   }
