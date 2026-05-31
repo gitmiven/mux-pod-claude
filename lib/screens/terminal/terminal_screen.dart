@@ -359,6 +359,11 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
                   ref.read(settingsProvider.notifier).toggleDirectInput();
                 },
                 onImagePickRequested: _handleImageTransfer,
+                recentCommands: ref.watch(commandHistoryProvider),
+                onSendCommand: (cmd) async {
+                  await _sendMultilineText(cmd);
+                  await ref.read(commandHistoryProvider.notifier).add(cmd);
+                },
               ),
             ],
           ),

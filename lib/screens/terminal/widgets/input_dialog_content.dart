@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../theme/design_colors.dart';
+import '../../../widgets/recent_commands_sheet.dart';
 
 /// Input dialog content (multi-line support, Shift+Enter for newline)
 class InputDialogContent extends StatefulWidget {
@@ -118,74 +119,10 @@ class _InputDialogContentState extends State<InputDialogContent> {
 
   /// History picker: lists the unique recent commands; tapping one sends it.
   void _showHistory() {
-    final colorScheme = Theme.of(context).colorScheme;
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (sheetContext) {
-        final commands = widget.recentCommands;
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(Icons.history, color: colorScheme.primary, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Recent commands',
-                      style: GoogleFonts.spaceGrotesk(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              if (commands.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    'No recent commands yet',
-                    style: TextStyle(
-                      color: colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                )
-              else
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: commands.length,
-                    itemBuilder: (context, index) {
-                      final cmd = commands[index];
-                      return ListTile(
-                        dense: true,
-                        title: Text(
-                          cmd,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.jetBrainsMono(fontSize: 13),
-                        ),
-                        onTap: () {
-                          Navigator.pop(sheetContext);
-                          _sendValue(cmd);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
+    showRecentCommandsSheet(
+      context,
+      commands: widget.recentCommands,
+      onSelected: _sendValue,
     );
   }
 
