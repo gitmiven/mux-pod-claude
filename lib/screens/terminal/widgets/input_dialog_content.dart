@@ -143,7 +143,7 @@ class _InputDialogContentState extends State<InputDialogContent> {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  'Shift+Enter: 改行',
+                  'Shift+Enter: new line',
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 10,
                     color: isDark ? DesignColors.textMuted : DesignColors.textMutedLight,
