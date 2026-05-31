@@ -10,9 +10,16 @@ Widget _buildApp() {
 }
 
 /// Scrolls until [finder] is visible in the first Scrollable of the tree.
+/// Uses a generous maxScrolls so far-down sections stay reachable as the
+/// settings list grows.
 Future<void> scrollUntilFound(WidgetTester tester, Finder finder) async {
   final scrollable = find.byType(Scrollable).first;
-  await tester.scrollUntilVisible(finder, 200, scrollable: scrollable);
+  await tester.scrollUntilVisible(
+    finder,
+    100,
+    scrollable: scrollable,
+    maxScrolls: 300,
+  );
 }
 
 void main() {

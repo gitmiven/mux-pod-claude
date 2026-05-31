@@ -40,6 +40,19 @@ class SettingsScreen extends ConsumerWidget {
                     ref.read(settingsProvider.notifier).setShowTerminalCursor(value);
                   },
                 ),
+                SwitchListTile(
+                  secondary: const Icon(Icons.edit_note),
+                  title: const Text('Pre-fill command box'),
+                  subtitle: const Text(
+                    'Start the command popup with the current terminal input line',
+                  ),
+                  value: settings.prefillCommandFromTerminal,
+                  onChanged: (value) {
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setPrefillCommandFromTerminal(value);
+                  },
+                ),
                 ListTile(
                   leading: const Icon(Icons.tune),
                   title: const Text('Adjust Mode'),
