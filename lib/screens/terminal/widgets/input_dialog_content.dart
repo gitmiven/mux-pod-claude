@@ -161,10 +161,15 @@ class _InputDialogContentState extends State<InputDialogContent> {
               controller: _controller,
               focusNode: _focusNode,
               scrollController: _scrollController,
-              maxLines: null, // Unlimited for internal scrolling
+              maxLines: null, // grows to show pasted multi-line input
               minLines: 1,
-              keyboardType: TextInputType.multiline,
-              textInputAction: TextInputAction.newline, // Multi-line support on paste
+              // The soft keyboard's Enter must SEND: on-screen keyboards don't
+              // emit the hardware KeyEvent the focus handler relies on, and a
+              // newline action would just insert a newline. Multi-line input
+              // still arrives via paste / hardware Shift+Enter.
+              keyboardType: TextInputType.text,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _handleSend(),
               style: GoogleFonts.jetBrainsMono(color: colorScheme.onSurface),
               decoration: InputDecoration(
                 hintText: 'Type your command... (Enter to send)',
