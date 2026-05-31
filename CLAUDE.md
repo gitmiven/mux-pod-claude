@@ -112,7 +112,7 @@ class TmuxPane {
 
 ## Recent Changes
 
-- 007-decompose-terminal-screen: Began breaking up the `terminal_screen.dart` god-widget — extracted 7 self-contained helper classes (painters, dialogs, pane-layout visualizer) into `lib/screens/terminal/widgets/` (4,527 → 3,291 lines); behavior-identical. Controller extraction from `_TerminalScreenState` to follow.
+- 007-decompose-terminal-screen: Broke up the `terminal_screen.dart` god-widget (4,527 → 389 lines), behavior-identical. Slice 1: extracted 7 helper classes (painters, dialogs, pane-layout visualizer) into `lib/screens/terminal/widgets/`. Slice 2: split `_TerminalScreenState` into `part`-file mixins — `_TerminalScreenLogic` (fields + engine) and `_TerminalScreenView` (build helpers/dialogs).
 - 006-pr-validation-ci: GitHub Actions CI (`flutter analyze` + `flutter test`) on PRs/main, Flutter pinned; made the suite green (bundled JetBrains Mono for tests, fixed a set-state-after-dispose bug)
 - 005-translate-japanese-comments: Translated in-code comments to English across the codebase
 - 004-ssh-security-hardening: SSH host-key verification (TOFU via dartssh2 `onVerifyHostKey`, stored per `host:port` in `lib/services/ssh/trusted_host_store.dart`, fail-closed mismatch with re-trust/forget UI) and centralized command-injection escaping (`lib/services/shell/shell_escape.dart`, used by `TmuxCommands` and the tmux-path checks)
