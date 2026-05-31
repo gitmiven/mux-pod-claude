@@ -9,6 +9,7 @@ import 'package:dartssh2/dartssh2.dart';
 import '../shell/shell_escape.dart';
 import 'host_key_verifier.dart';
 import 'persistent_shell.dart';
+import '../logging/app_log.dart';
 
 /// SSH connection error
 class SshConnectionError implements Exception {
@@ -186,10 +187,10 @@ class SshClient {
       throw SshConnectionError('SFTP requires an active SSH connection');
     }
     if (_cachedSftp != null) {
-      debugPrint('[SshClient] openSftp: returning cached SftpClient');
+      AppLog.d('[SshClient] openSftp: returning cached SftpClient');
       return _cachedSftp!;
     }
-    debugPrint('[SshClient] openSftp: creating new SftpClient');
+    AppLog.d('[SshClient] openSftp: creating new SftpClient');
     _cachedSftp = await _client!.sftp();
     return _cachedSftp!;
   }
@@ -271,9 +272,9 @@ class SshClient {
         });
         if (verifyExitCode == 0) {
           _tmuxPath = options.tmuxPath;
-          debugPrint('connect: user-specified tmux path verified: $_tmuxPath');
+          AppLog.d('connect: user-specified tmux path verified: $_tmuxPath');
         } else {
-          debugPrint('connect: user-specified tmux path not found: ${options.tmuxPath}');
+          AppLog.d('connect: user-specified tmux path not found: ${options.tmuxPath}');
         }
       } else {
         await _detectTmuxPath();
@@ -465,11 +466,11 @@ class SshClient {
       });
       if (path.isNotEmpty && path.startsWith('/')) {
         _tmuxPath = path;
-        debugPrint('_detectTmuxPath: found via login shell: $path');
+        AppLog.d('_detectTmuxPath: found via login shell: $path');
         return;
       }
     } catch (e) {
-      debugPrint('_detectTmuxPath: login shell detection failed: $e');
+      AppLog.d('_detectTmuxPath: login shell detection failed: $e');
     }
 
     // Step 2: Fallback to known candidate paths
@@ -491,20 +492,20 @@ class SshClient {
         });
         if (exitCode == 0) {
           _tmuxPath = candidate;
-          debugPrint('_detectTmuxPath: found via fallback: $candidate');
+          AppLog.d('_detectTmuxPath: found via fallback: $candidate');
           return;
         }
       } catch (e) {
-        debugPrint('_detectTmuxPath: error checking $candidate: $e');
+        AppLog.d('_detectTmuxPath: error checking $candidate: $e');
       }
     }
-    debugPrint('_detectTmuxPath: tmux not found');
+    AppLog.d('_detectTmuxPath: tmux not found');
   }
 
   /// Replace `tmux` in command with detected absolute path
   String _resolveTmuxCommand(String command) {
     if (_tmuxPath == null) {
-      debugPrint('_resolveTmuxCommand: _tmuxPath=null, command unchanged');
+      AppLog.d('_resolveTmuxCommand: _tmuxPath=null, command unchanged');
       return command;
     }
     // Detected/specified absolute path is safely encoded as literal data (FR-011).
@@ -514,7 +515,7 @@ class SshClient {
       (m) => '${m[1]}$safePath',
     );
     if (resolved != command) {
-      debugPrint('_resolveTmuxCommand: "$command" => "$resolved"');
+      AppLog.d('_resolveTmuxCommand: "$command" => "$resolved"');
     }
     return resolved;
   }
@@ -734,18 +735,19 @@ class SshClient {
         // If stderr is present, treat as error (optional)
         if (stderr.isNotEmpty) {
           // Include stderr in result (tmux commands may output to stderr)
-          debugPrint('exec: stdout="${stdout.trim()}", stderr="${stderr.trim()}"');
+          // Do not log raw command output — it may contain sensitive data (FR-004).
+          AppLog.d('exec: ${stdout.length}B stdout, ${stderr.length}B stderr');
           return stdout + stderr;
         }
 
-        debugPrint('exec: stdout="${stdout.trim()}"');
+        AppLog.d('exec: ${stdout.length}B stdout');
         return stdout;
       });
     } on TimeoutException {
-      debugPrint('exec: timed out');
+      AppLog.d('exec: timed out');
       throw SshConnectionError('Command execution timed out');
     } catch (e) {
-      debugPrint('exec: error=$e');
+      AppLog.d('exec: error=$e');
       throw SshConnectionError('Failed to execute command: $e', e);
     }
   }

@@ -387,7 +387,7 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
       // 7. Notify TerminalDisplayProvider of pane info (for font size calculation)
       final activePane = ref.read(tmuxProvider).activePane;
       if (activePane != null) {
-        debugPrint('[Terminal] Pane size: ${activePane.width}x${activePane.height}');
+        AppLog.d('[Terminal] Pane size: ${activePane.width}x${activePane.height}');
         ref.read(terminalDisplayProvider.notifier).updatePane(activePane);
         _viewNotifier.value = _viewNotifier.value.copyWith(
           paneWidth: activePane.width,
@@ -908,7 +908,7 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
       await sshClient.exec(TmuxCommands.selectWindow(sessionName, windowIndex));
     } catch (e) {
       // Ignore if SSH connection is closed
-      debugPrint('[Terminal] Failed to select window: $e');
+      AppLog.d('[Terminal] Failed to select window: $e');
       return;
     }
     if (!mounted || _isDisposed) return;
@@ -947,7 +947,7 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
       await sshClient.exec(TmuxCommands.sendKeys(paneId, '\x1b[I', literal: true));
     } catch (e) {
       // Ignore if SSH connection is closed
-      debugPrint('[Terminal] Failed to select pane: $e');
+      AppLog.d('[Terminal] Failed to select pane: $e');
       return;
     }
     if (!mounted || _isDisposed) return;
@@ -1096,7 +1096,7 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
       fontFamily: settings.fontFamily,
     );
 
-    debugPrint('[AutoResize] screenWidth=${displayState.screenWidth} '
+    AppLog.d('[AutoResize] screenWidth=${displayState.screenWidth} '
         'screenHeight=${displayState.screenHeight} '
         'fontSize=$fontSize '
         'fontFamily=${settings.fontFamily} '
@@ -1120,7 +1120,7 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
         ref.read(terminalDisplayProvider.notifier).updatePane(updatedPane);
       }
     } catch (e) {
-      debugPrint('[AutoResize] Failed: $e');
+      AppLog.d('[AutoResize] Failed: $e');
     } finally {
       _isResizing = false;
       if (mounted && !_isDisposed) _startPolling();
@@ -1302,7 +1302,7 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
         }
       }
     } catch (e) {
-      debugPrint('[Terminal] Failed to kill pane: $e');
+      AppLog.d('[Terminal] Failed to kill pane: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to close pane: $e')),
@@ -1333,7 +1333,7 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
     }
 
     try {
-      debugPrint('[Terminal] Killing window: $sessionName:$windowIndex');
+      AppLog.d('[Terminal] Killing window: $sessionName:$windowIndex');
       await sshClient.exec(TmuxCommands.killWindow(sessionName, windowIndex));
       await _refreshSessionTree();
 
@@ -1342,7 +1342,7 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
       // Check if session terminated: verify directly with list-sessions
       final sessionsOutput = await sshClient.exec('tmux list-sessions 2>/dev/null || true');
       if (sessionsOutput.trim().isEmpty) {
-        debugPrint('[Terminal] Last window closed, session terminated. Disconnecting...');
+        AppLog.d('[Terminal] Last window closed, session terminated. Disconnecting...');
         await _disconnect();
         return;
       }
@@ -1360,7 +1360,7 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
         }
       }
     } catch (e) {
-      debugPrint('[Terminal] Failed to kill window: $e');
+      AppLog.d('[Terminal] Failed to kill window: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to close window: $e')),
@@ -1640,7 +1640,7 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
       );
       _boostPolling();
     } catch (e) {
-      debugPrint('[Terminal] paste-buffer send failed: $e');
+      AppLog.d('[Terminal] paste-buffer send failed: $e');
       // Retry without bracketed paste for tmux < 2.6 which does not
       // support the -p flag.
       try {
@@ -1649,7 +1649,7 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
         );
         _boostPolling();
       } catch (e2) {
-        debugPrint('[Terminal] paste-buffer (no-bracketed) send failed: $e2');
+        AppLog.d('[Terminal] paste-buffer (no-bracketed) send failed: $e2');
         // TODO: surface a SnackBar after repeated failures.
       }
     }

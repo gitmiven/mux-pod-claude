@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +13,7 @@ import '../../services/tmux/tmux_parser.dart';
 import '../../theme/design_colors.dart';
 import 'connection_form_screen.dart';
 import '../terminal/terminal_screen.dart';
+import '../../services/logging/app_log.dart';
 
 /// Notifier managing search bar visibility state
 class _SearchVisibleNotifier extends Notifier<bool> {
@@ -39,9 +39,9 @@ class ConnectionsScreen extends ConsumerWidget {
     final isSearchVisible = ref.watch(_searchVisibleProvider);
     final searchQuery = ref.watch(connectionSearchProvider);
 
-    developer.log(
+    AppLog.d(
       'ConnectionsScreen.build() - connections: ${connectionsState.connections.length}, isLoading: ${connectionsState.isLoading}',
-      name: 'ConnectionsScreen',
+      tag: 'ConnectionsScreen',
     );
 
     return Scaffold(
@@ -410,23 +410,23 @@ class ConnectionsScreen extends ConsumerWidget {
   }
 
   void _addConnection(BuildContext context, WidgetRef ref) async {
-    developer.log('_addConnection() - navigating to ConnectionFormScreen', name: 'ConnectionsScreen');
+    AppLog.d('_addConnection() - navigating to ConnectionFormScreen', tag: 'ConnectionsScreen');
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const ConnectionFormScreen()),
     );
-    developer.log('_addConnection() - returned', name: 'ConnectionsScreen');
+    AppLog.d('_addConnection() - returned', tag: 'ConnectionsScreen');
     // No invalidate: ConnectionsNotifier.add() already updates state directly,
     // so the list reflects the new entry immediately via ref.watch.
   }
 
   void _editConnection(BuildContext context, WidgetRef ref, Connection connection) async {
-    developer.log('_editConnection() - navigating to ConnectionFormScreen for ${connection.id}', name: 'ConnectionsScreen');
+    AppLog.d('_editConnection() - navigating to ConnectionFormScreen for ${connection.id}', tag: 'ConnectionsScreen');
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ConnectionFormScreen(connectionId: connection.id),
       ),
     );
-    developer.log('_editConnection() - returned', name: 'ConnectionsScreen');
+    AppLog.d('_editConnection() - returned', tag: 'ConnectionsScreen');
     // No invalidate: ConnectionsNotifier.update() already updates state directly,
     // so the list reflects the change immediately via ref.watch.
   }
@@ -690,16 +690,16 @@ class _ConnectionCardState extends ConsumerState<_ConnectionCard> {
       );
 
       final cmd = TmuxCommands.listSessions();
-      debugPrint('_fetchSessions: tmuxPath=${sshClient.tmuxPath}, cmd="$cmd"');
+      AppLog.d('_fetchSessions: tmuxPath=${sshClient.tmuxPath}, cmd="$cmd"');
       final result = await sshClient.execWithExitCode(cmd);
-      debugPrint('_fetchSessions: stdout="${result.stdout.trim()}", stderr="${result.stderr.trim()}", exitCode=${result.exitCode}');
+      AppLog.d('_fetchSessions: stdout="${result.stdout.trim()}", stderr="${result.stderr.trim()}", exitCode=${result.exitCode}');
       if (result.exitCode != null && result.exitCode != 0) {
         throw SshConnectionError(
           result.stderr.isNotEmpty ? result.stderr.trim() : 'tmux command failed (exit code: ${result.exitCode})',
         );
       }
       final sessions = TmuxParser.parseSessions(result.stdout);
-      debugPrint('_fetchSessions: parsed ${sessions.length} sessions');
+      AppLog.d('_fetchSessions: parsed ${sessions.length} sessions');
 
       // Disconnect
       await sshClient.disconnect();

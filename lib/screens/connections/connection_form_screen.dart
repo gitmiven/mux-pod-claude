@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +11,7 @@ import '../../services/keychain/secure_storage.dart';
 import '../../services/ssh/ssh_client.dart';
 import '../../services/ssh/trusted_host_identity.dart';
 import '../../theme/design_colors.dart';
+import '../../services/logging/app_log.dart';
 
 /// Connection edit screen.
 class ConnectionFormScreen extends ConsumerStatefulWidget {
@@ -1016,25 +1016,25 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
   }
 
   Future<void> _save() async {
-    developer.log('_save() called', name: 'ConnectionForm');
+    AppLog.d('_save() called', tag: 'ConnectionForm');
 
     if (!_formKey.currentState!.validate()) {
-      developer.log('Form validation failed', name: 'ConnectionForm');
+      AppLog.d('Form validation failed', tag: 'ConnectionForm');
       return;
     }
 
     setState(() => _isSaving = true);
-    developer.log('Starting save process...', name: 'ConnectionForm');
+    AppLog.d('Starting save process...', tag: 'ConnectionForm');
 
     try {
       final connectionId = widget.connectionId ?? const Uuid().v4();
-      developer.log('Connection ID: $connectionId (isEditing: ${widget.isEditing})', name: 'ConnectionForm');
+      AppLog.d('Connection ID: $connectionId (isEditing: ${widget.isEditing})', tag: 'ConnectionForm');
 
       if (_authMethod == 'password' && _passwordController.text.isNotEmpty) {
-        developer.log('Saving password to secure storage...', name: 'ConnectionForm');
+        AppLog.d('Saving password to secure storage...', tag: 'ConnectionForm');
         final storage = SecureStorageService();
         await storage.savePassword(connectionId, _passwordController.text);
-        developer.log('Password saved successfully', name: 'ConnectionForm');
+        AppLog.d('Password saved successfully', tag: 'ConnectionForm');
       }
 
       final saveTmuxPath = _tmuxPathController.text.trim();
@@ -1053,25 +1053,25 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
             ? ref.read(connectionsProvider.notifier).getById(connectionId)?.createdAt ?? DateTime.now()
             : DateTime.now(),
       );
-      developer.log('Connection object created: ${connection.name}', name: 'ConnectionForm');
+      AppLog.d('Connection object created: ${connection.name}', tag: 'ConnectionForm');
 
       if (widget.isEditing) {
-        developer.log('Updating existing connection...', name: 'ConnectionForm');
+        AppLog.d('Updating existing connection...', tag: 'ConnectionForm');
         await ref.read(connectionsProvider.notifier).update(connection);
-        developer.log('Connection updated successfully', name: 'ConnectionForm');
+        AppLog.d('Connection updated successfully', tag: 'ConnectionForm');
       } else {
-        developer.log('Adding new connection...', name: 'ConnectionForm');
+        AppLog.d('Adding new connection...', tag: 'ConnectionForm');
         await ref.read(connectionsProvider.notifier).add(connection);
-        developer.log('Connection added successfully', name: 'ConnectionForm');
+        AppLog.d('Connection added successfully', tag: 'ConnectionForm');
       }
 
-      developer.log('Save completed, popping navigator...', name: 'ConnectionForm');
+      AppLog.d('Save completed, popping navigator...', tag: 'ConnectionForm');
       if (mounted) {
         Navigator.of(context).pop(true);
-        developer.log('Navigator popped', name: 'ConnectionForm');
+        AppLog.d('Navigator popped', tag: 'ConnectionForm');
       }
     } catch (e, stackTrace) {
-      developer.log('Error saving connection: $e', name: 'ConnectionForm', error: e, stackTrace: stackTrace);
+      AppLog.e('Error saving connection: $e', tag: 'ConnectionForm', error: e, stackTrace: stackTrace);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1083,7 +1083,7 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
-        developer.log('_isSaving set to false', name: 'ConnectionForm');
+        AppLog.d('_isSaving set to false', tag: 'ConnectionForm');
       }
     }
   }

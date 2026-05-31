@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/sftp/file_entry.dart';
@@ -9,6 +8,7 @@ import '../services/ssh/ssh_client.dart';
 import '../services/tmux/tmux_parser.dart';
 import 'ssh_provider.dart';
 import 'tmux_provider.dart';
+import '../services/logging/app_log.dart';
 
 /// File browser state
 class FileBrowserState {
@@ -332,7 +332,7 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
   void _log(String message) {
     if (message.contains('openSftp OK')) _sftpOpenCount++;
     if (message.contains('sftp.close()')) _sftpCloseCount++;
-    debugPrint('[FileBrowser] $message (open=$_sftpOpenCount, close=$_sftpCloseCount, leaked=${_sftpOpenCount - _sftpCloseCount})');
+    AppLog.d('[FileBrowser] $message (open=$_sftpOpenCount, close=$_sftpCloseCount, leaked=${_sftpOpenCount - _sftpCloseCount})');
   }
 }
 

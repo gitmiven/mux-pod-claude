@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/logging/app_log.dart';
 
 /// Connection settings
 class Connection {
@@ -135,11 +135,11 @@ class ConnectionsNotifier extends Notifier<ConnectionsState> {
   }
 
   Future<void> _loadConnections() async {
-    developer.log('_loadConnections() started', name: 'ConnectionsProvider');
+    AppLog.d('_loadConnections() started', tag: 'ConnectionsProvider');
     try {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = prefs.getString(_storageKey);
-      developer.log('JSON from storage: ${jsonString != null ? 'exists' : 'null'}', name: 'ConnectionsProvider');
+      AppLog.d('JSON from storage: ${jsonString != null ? 'exists' : 'null'}', tag: 'ConnectionsProvider');
 
       if (jsonString != null) {
         final jsonList = jsonDecode(jsonString) as List<dynamic>;
@@ -147,7 +147,7 @@ class ConnectionsNotifier extends Notifier<ConnectionsState> {
             .map((json) => Connection.fromJson(json as Map<String, dynamic>))
             .toList();
 
-        developer.log('Loaded ${connections.length} connections from storage', name: 'ConnectionsProvider');
+        AppLog.d('Loaded ${connections.length} connections from storage', tag: 'ConnectionsProvider');
 
         // Sort by last connected time (descending)
         connections.sort((a, b) {
@@ -157,13 +157,13 @@ class ConnectionsNotifier extends Notifier<ConnectionsState> {
         });
 
         state = ConnectionsState(connections: connections);
-        developer.log('State updated with ${connections.length} connections', name: 'ConnectionsProvider');
+        AppLog.d('State updated with ${connections.length} connections', tag: 'ConnectionsProvider');
       } else {
         state = const ConnectionsState();
-        developer.log('No saved connections, initialized empty state', name: 'ConnectionsProvider');
+        AppLog.d('No saved connections, initialized empty state', tag: 'ConnectionsProvider');
       }
     } catch (e, stackTrace) {
-      developer.log('Error loading connections: $e', name: 'ConnectionsProvider', error: e, stackTrace: stackTrace);
+      AppLog.e('Error loading connections: $e', tag: 'ConnectionsProvider', error: e, stackTrace: stackTrace);
       state = ConnectionsState(error: e.toString());
     }
   }
@@ -176,37 +176,37 @@ class ConnectionsNotifier extends Notifier<ConnectionsState> {
 
   /// Add a connection
   Future<void> add(Connection connection) async {
-    developer.log('add() called: ${connection.name} (${connection.id})', name: 'ConnectionsProvider');
-    developer.log('Current connections count: ${state.connections.length}', name: 'ConnectionsProvider');
+    AppLog.d('add() called: ${connection.name} (${connection.id})', tag: 'ConnectionsProvider');
+    AppLog.d('Current connections count: ${state.connections.length}', tag: 'ConnectionsProvider');
 
     final connections = [...state.connections, connection];
-    developer.log('New connections count: ${connections.length}', name: 'ConnectionsProvider');
+    AppLog.d('New connections count: ${connections.length}', tag: 'ConnectionsProvider');
 
     state = state.copyWith(connections: connections);
-    developer.log('State updated, saving to SharedPreferences...', name: 'ConnectionsProvider');
+    AppLog.d('State updated, saving to SharedPreferences...', tag: 'ConnectionsProvider');
 
     await _saveConnections();
-    developer.log('Connections saved. Final count: ${state.connections.length}', name: 'ConnectionsProvider');
+    AppLog.d('Connections saved. Final count: ${state.connections.length}', tag: 'ConnectionsProvider');
   }
 
   /// Remove a connection
   Future<void> remove(String id) async {
-    developer.log('remove() called: $id', name: 'ConnectionsProvider');
+    AppLog.d('remove() called: $id', tag: 'ConnectionsProvider');
     final connections = state.connections.where((c) => c.id != id).toList();
     state = state.copyWith(connections: connections);
     await _saveConnections();
-    developer.log('Connection removed. Remaining: ${state.connections.length}', name: 'ConnectionsProvider');
+    AppLog.d('Connection removed. Remaining: ${state.connections.length}', tag: 'ConnectionsProvider');
   }
 
   /// Update a connection
   Future<void> update(Connection connection) async {
-    developer.log('update() called: ${connection.name} (${connection.id})', name: 'ConnectionsProvider');
+    AppLog.d('update() called: ${connection.name} (${connection.id})', tag: 'ConnectionsProvider');
     final connections = state.connections.map((c) {
       return c.id == connection.id ? connection : c;
     }).toList();
     state = state.copyWith(connections: connections);
     await _saveConnections();
-    developer.log('Connection updated and saved', name: 'ConnectionsProvider');
+    AppLog.d('Connection updated and saved', tag: 'ConnectionsProvider');
   }
 
   /// Update last connected time

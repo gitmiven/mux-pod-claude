@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/foundation.dart';
+import '../logging/app_log.dart';
 
 /// Persistent shell session
 ///
@@ -141,7 +142,7 @@ class PersistentShell {
         final lastBytes = data.length > 6
             ? data.sublist(data.length - 6)
             : data;
-        debugPrint(
+        AppLog.d(
           '[PersistentShell] UTF-8 boundary split detected!'
           ' chunk_size=${data.length}'
           ' last_bytes=${lastBytes.map((b) => '0x${b.toRadixString(16).padLeft(2, '0')}').join(' ')}'

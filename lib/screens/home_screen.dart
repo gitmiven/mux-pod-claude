@@ -14,6 +14,7 @@ import 'keys/keys_screen.dart';
 import 'notifications/notification_panes_screen.dart';
 import 'settings/settings_screen.dart';
 import 'terminal/terminal_screen.dart';
+import '../services/logging/app_log.dart';
 
 /// Current tab index Notifier
 /// Tab order: 0=Servers, 1=Keys, 2=Dashboard, 3=Notify, 4=Settings
@@ -405,7 +406,7 @@ class _TerminalTabState extends ConsumerState<_TerminalTab> {
               );
         } catch (e) {
           // Ignore individual connection errors (continue with other connections)
-          debugPrint('Failed to reload sessions for ${connection.name}: $e');
+          AppLog.d('Failed to reload sessions for ${connection.name}: $e');
         }
       }
     } finally {
