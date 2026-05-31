@@ -465,4 +465,21 @@ class AnsiParser {
   }) {
     return toTextSpan(line.segments, fontSize: fontSize, fontFamily: fontFamily);
   }
+
+  /// The background color to fill the remainder of a line with — beyond its
+  /// last glyph, and for fully empty lines — derived from the style active at
+  /// the line's end (which [parseLines] carries across line breaks).
+  ///
+  /// This is what makes a full-screen TUI's solid background (e.g. mc's blue)
+  /// fill each row to the pane width instead of showing only behind the text.
+  /// Returns null when the line ends on the default background, so ordinary
+  /// shell output (which resets before each newline) is left unchanged.
+  Color? lineFillColor(ParsedLine line) {
+    final style = line.endStyle;
+    // Inverse swaps fg/bg, so the visible "background" is the foreground color.
+    if (style.inverse) {
+      return style.foreground ?? defaultForeground;
+    }
+    return style.background;
+  }
 }

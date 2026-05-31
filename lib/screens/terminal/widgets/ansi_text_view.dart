@@ -369,6 +369,15 @@ class AnsiTextViewState extends ConsumerState<AnsiTextView>
               );
             }
 
+            // Fill the line's background to the full pane width. Full-screen TUI
+            // apps (mc, etc.) paint a solid background that capture-pane strips
+            // past the last glyph; without this the bg would show only behind
+            // the text. Null fill = default background → rendered unchanged.
+            final fillColor = _parser.lineFillColor(line);
+            if (fillColor != null) {
+              lineWidget = ColoredBox(color: fillColor, child: lineWidget);
+            }
+
             return lineWidget;
           },
         );
