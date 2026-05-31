@@ -12,7 +12,7 @@
 - [x] **T005** Split `AnsiTextViewState` into part-file Logic/View mixins (one-directional).
 
 ## Slice 3 — special_keys_bar.dart
-- [ ] **T006** Split `_SpecialKeysBarState` into part-file mixins.
+- [x] **T006** Split `_SpecialKeysBarState` into part-file mixins.
 
 ## Gate
-- [ ] **T007** analyze exit 0; test 335 pass; commit per slice; PR; CI green.
+- [x] **T007** analyze exit 0; test 335 pass; commit per slice; PR; CI green.
