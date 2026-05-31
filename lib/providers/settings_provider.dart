@@ -70,6 +70,9 @@ class AppSettings {
   /// `lastVisited` (the remembered per-connection directory).
   final String fileBrowserStartDir;
 
+  /// Pre-fill the "Enter Command" popup with the current terminal input line.
+  final bool prefillCommandFromTerminal;
+
   const AppSettings({
     this.darkMode = true,
     this.fontSize = 14.0,
@@ -101,6 +104,7 @@ class AppSettings {
     this.imageBracketedPaste = false,
     this.fileViewers = kDefaultFileViewers,
     this.fileBrowserStartDir = kFileBrowserStartClaudeCode,
+    this.prefillCommandFromTerminal = false,
   });
 
   bool get isAutoFit => adjustMode == 'autoFit';
@@ -137,6 +141,7 @@ class AppSettings {
     bool? imageBracketedPaste,
     Map<String, String>? fileViewers,
     String? fileBrowserStartDir,
+    bool? prefillCommandFromTerminal,
   }) {
     return AppSettings(
       darkMode: darkMode ?? this.darkMode,
@@ -169,6 +174,8 @@ class AppSettings {
       imageBracketedPaste: imageBracketedPaste ?? this.imageBracketedPaste,
       fileViewers: fileViewers ?? this.fileViewers,
       fileBrowserStartDir: fileBrowserStartDir ?? this.fileBrowserStartDir,
+      prefillCommandFromTerminal:
+          prefillCommandFromTerminal ?? this.prefillCommandFromTerminal,
     );
   }
 }
@@ -205,6 +212,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const String _keyOverlayPositionKey = 'settings_key_overlay_position';
   static const String _fileViewersKey = 'settings_file_viewers';
   static const String _fileBrowserStartDirKey = 'settings_file_browser_start_dir';
+  static const String _prefillCommandKey = 'settings_prefill_command_from_terminal';
 
   /// Decode the file-viewers map from its stored JSON, falling back to the
   /// defaults when absent or unparseable. Keeps only entries whose value is a
@@ -273,6 +281,8 @@ class SettingsNotifier extends Notifier<AppSettings> {
       fileViewers: _decodeFileViewers(prefs.getString(_fileViewersKey)),
       fileBrowserStartDir: prefs.getString(_fileBrowserStartDirKey) ??
           kFileBrowserStartClaudeCode,
+      prefillCommandFromTerminal:
+          prefs.getBool(_prefillCommandKey) ?? false,
     );
   }
 
@@ -483,6 +493,12 @@ class SettingsNotifier extends Notifier<AppSettings> {
         : kFileBrowserStartClaudeCode;
     state = state.copyWith(fileBrowserStartDir: normalised);
     await _saveSetting(_fileBrowserStartDirKey, normalised);
+  }
+
+  /// Toggle pre-filling the command popup from the terminal input line.
+  Future<void> setPrefillCommandFromTerminal(bool value) async {
+    state = state.copyWith(prefillCommandFromTerminal: value);
+    await _saveSetting(_prefillCommandKey, value);
   }
 
   /// Reload

@@ -1462,6 +1462,31 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
     }
   }
 
+  /// The user's typed text on the current terminal input line (the cursor's
+  /// row of the captured pane), with prompt / input-box decoration stripped.
+  /// Empty when there is nothing to pre-fill.
+  String _currentInputLinePrefill() {
+    final content = _viewNotifier.value.content;
+    if (content.isEmpty) return '';
+    final paneHeight = _viewNotifier.value.paneHeight;
+    final cursorY = ref.read(tmuxProvider).activePane?.cursorY ?? 0;
+    final lines = content.split('\n');
+    // Visible area is the last paneHeight lines; cursorY is pane-top relative.
+    final idx =
+        lines.length >= paneHeight ? lines.length - paneHeight + cursorY : cursorY;
+    if (idx < 0 || idx >= lines.length) return '';
+    return InputLineExtractor.extract(lines[idx]);
+  }
+
+  /// Clears the active pane's current input line before re-sending edited text
+  /// (so a pre-filled command isn't duplicated). C-u clears the line in most
+  /// shells; C-a then C-k clears it in readline / editor-style inputs.
+  Future<void> _clearPaneInputLine() async {
+    await _sendSpecialKey('C-u');
+    await _sendSpecialKey('C-a');
+    await _sendSpecialKey('C-k');
+  }
+
   ProviderSubscription? _imageTransferSub;
 
   /// Initialize image transfer state listener (once only)

@@ -18,6 +18,7 @@ import '../../services/ssh/input_queue.dart';
 import '../../services/ssh/ssh_client.dart' show SshConnectOptions;
 import '../../services/tmux/pane_navigator.dart';
 import '../../services/terminal/font_calculator.dart';
+import '../../services/terminal/input_line_extractor.dart';
 import '../../services/tmux/tmux_commands.dart';
 import '../../services/tmux/tmux_parser.dart';
 import '../../services/tmux/tmux_version.dart';

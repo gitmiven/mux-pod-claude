@@ -1191,6 +1191,14 @@ mixin _TerminalScreenView on _TerminalScreenLogic {
 
 
   void _showInputDialog() {
+    // When enabled, pre-fill from the current terminal input line; sending then
+    // clears that line first so the command isn't duplicated.
+    final prefillEnabled =
+        ref.read(settingsProvider).prefillCommandFromTerminal;
+    final prefill = prefillEnabled ? _currentInputLinePrefill() : '';
+    final prefilled = prefill.isNotEmpty;
+    final initialValue = prefilled ? prefill : _savedCommandInput;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1198,12 +1206,21 @@ mixin _TerminalScreenView on _TerminalScreenLogic {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetContext) => InputDialogContent(
-        initialValue: _savedCommandInput,
+        initialValue: initialValue,
         onValueChanged: (value) {
           // Save input in real-time
           _savedCommandInput = value;
         },
         onSend: (value) async {
+          if (value.isEmpty) {
+            if (sheetContext.mounted) Navigator.pop(sheetContext);
+            return;
+          }
+          // The pre-fill came from the terminal's input line, so clear it before
+          // sending to avoid duplicating the command.
+          if (prefilled) {
+            await _clearPaneInputLine();
+          }
           await _sendMultilineText(value);
           // Clear input on successful send
           _savedCommandInput = '';
