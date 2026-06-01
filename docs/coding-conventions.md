@@ -1,25 +1,25 @@
-# MuxPod コーディング規約
+# MuxPod coding conventions
 
-## 命名規則
+## Naming conventions
 
-| 対象 | 規則 | 例 |
+| Target | Rule | Example |
 |------|------|-----|
-| コンポーネント | PascalCase | `TerminalView.tsx` |
+| Components | PascalCase | `TerminalView.tsx` |
 | hooks | camelCase + `use` prefix | `useTerminal.ts` |
 | stores | camelCase + `Store` suffix | `connectionStore.ts` |
 | services | camelCase | `client.ts` |
-| 型定義 | PascalCase | `TmuxSession` |
-| 定数 | SCREAMING_SNAKE_CASE | `DEFAULT_PORT` |
+| Type definitions | PascalCase | `TmuxSession` |
+| Constants | SCREAMING_SNAKE_CASE | `DEFAULT_PORT` |
 
-## 状態管理
+## State management
 
 ### Zustand Store
-- グローバル状態は `src/stores/` に配置
-- 永続化が必要なもの: `persist` middleware + AsyncStorage
-- センシティブデータ: `expo-secure-store`
+- Global state lives in `src/stores/`
+- Things that need persistence: `persist` middleware + AsyncStorage
+- Sensitive data: `expo-secure-store`
 
 ```typescript
-// 例: src/stores/connectionStore.ts
+// Example: src/stores/connectionStore.ts
 export const useConnectionStore = create<ConnectionStore>()(
   persist(
     (set, get) => ({ ... }),
@@ -32,43 +32,43 @@ export const useConnectionStore = create<ConnectionStore>()(
 );
 ```
 
-## SSH/tmux操作
+## SSH/tmux operations
 
-### SSHクライアント
-- `src/services/ssh/client.ts` の `SSHClient` クラスを使用
-- 接続管理は `connectionStore` と連携
+### SSH client
+- Use the `SSHClient` class in `src/services/ssh/client.ts`
+- Connection management is coordinated with `connectionStore`
 
-### tmuxコマンド
-- `src/services/tmux/commands.ts` の `TmuxCommands` クラスを使用
-- シェルエスケープは必ず `escape()` メソッドを使用（インジェクション防止）
+### tmux commands
+- Use the `TmuxCommands` class in `src/services/tmux/commands.ts`
+- Always use the `escape()` method for shell escaping (injection prevention)
 
 ```typescript
-// 正しい例
+// Correct
 await tmux.sendKeys(sessionName, windowIndex, paneIndex, keys);
 
-// 悪い例（直接コマンド構築は禁止）
+// Bad (building commands directly is forbidden)
 await ssh.exec(`tmux send-keys -t ${sessionName} ${keys}`);
 ```
 
-## ターミナル表示
+## Terminal display
 
-- ANSIエスケープシーケンス処理: `src/services/ansi/parser.ts`
-- 文字幅計算（日本語対応）: `src/services/terminal/charWidth.ts`
-- ポーリング間隔: 100ms（`useTerminal` hook内）
+- ANSI escape-sequence handling: `src/services/ansi/parser.ts`
+- Character-width calculation (Japanese-aware): `src/services/terminal/charWidth.ts`
+- Polling interval: 100 ms (inside the `useTerminal` hook)
 
 ## TypeScript
 
-### 型定義
-- 共通型は `src/types/` に配置
-- コンポーネント固有のPropsは同ファイル内で定義
+### Type definitions
+- Shared types live in `src/types/`
+- Component-specific Props are defined in the same file
 
-### 厳格モード
-- `strict: true` を維持
-- `any` の使用は原則禁止（やむを得ない場合は `// eslint-disable-next-line` でコメント）
+### Strict mode
+- Keep `strict: true`
+- Avoid `any` as a rule (when unavoidable, comment it with `// eslint-disable-next-line`)
 
-## コンポーネント設計
+## Component design
 
-### ファイル構成
+### File structure
 ```typescript
 // 1. imports
 import { ... } from 'react';
@@ -86,5 +86,5 @@ export function MyComponent({ ... }: Props) {
 ```
 
 ### Hooks
-- カスタムhooksは `src/hooks/` に配置
-- 1つのhookは1つの責務に集中
+- Custom hooks live in `src/hooks/`
+- Each hook focuses on a single responsibility
