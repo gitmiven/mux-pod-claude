@@ -59,10 +59,10 @@
 		</dict>
 	</array>
 	<key>NSFaceIDUsageDescription</key>
-	<string>SSH接続情報への安全なアクセスのためにFace IDを使用します</string>
+	<string>Uses Face ID for secure access to your SSH connection details.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>画像をリモートサーバーに転送するためにフォトライブラリを使用します</string>
+	<string>Uses your photo library to transfer images to the remote server.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>撮影した画像をリモートサーバーに転送するためにカメラを使用します</string>
+	<string>Uses the camera to transfer captured images to the remote server.</string>
 </dict>
 </plist>
