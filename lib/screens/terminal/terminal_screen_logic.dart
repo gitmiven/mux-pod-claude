@@ -76,6 +76,11 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
   // Auto-resize debounce timer (on screen size change)
   Timer? _autoResizeDebounceTimer;
 
+  // Keyboard-show handling: last observed bottom inset + settle timer, used to
+  // scroll the input line into view when the soft keyboard opens.
+  double _lastKeyboardInset = 0;
+  Timer? _keyboardScrollTimer;
+
   // tmux version information (for resize feature determination)
   TmuxVersionInfo? _tmuxVersion;
 
@@ -987,6 +992,37 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
             );
       }
     }
+  }
+
+  /// React to a bottom view-inset change (typically the soft keyboard sliding
+  /// in/out). On the keyboard *show* edge, scroll the terminal to the caret so
+  /// the live input line sits above the keyboard instead of hidden behind it.
+  ///
+  /// Suppressed while reading history (scroll mode); independent of auto-resize.
+  void _handleKeyboardInsetChange() {
+    if (!mounted || _isDisposed) return;
+    final view = View.of(context);
+    final newInset = view.viewInsets.bottom / view.devicePixelRatio;
+    final prevInset = _lastKeyboardInset;
+    _lastKeyboardInset = newInset;
+
+    if (!shouldScrollOnKeyboardShow(
+      prevInset: prevInset,
+      newInset: newInset,
+      isScrollMode: _terminalMode == TerminalMode.scroll,
+    )) {
+      return;
+    }
+
+    // Let the keyboard animation + viewport resize settle, then reveal the
+    // caret (scrollToCaret clamps to the now-shorter viewport).
+    _keyboardScrollTimer?.cancel();
+    _keyboardScrollTimer = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted || _isDisposed) return;
+      final state = _ansiTextViewKey.currentState;
+      if (state == null) return;
+      state.scrollToCaret();
+    });
   }
 
   /// Scroll to caret position
