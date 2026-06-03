@@ -73,6 +73,10 @@ class AppSettings {
   /// Pre-fill the "Enter Command" popup with the current terminal input line.
   final bool prefillCommandFromTerminal;
 
+  /// Open the file browser with hidden (dot-prefixed) entries visible by
+  /// default. The AppBar eye toggle still overrides this per session.
+  final bool showHiddenFilesByDefault;
+
   const AppSettings({
     this.darkMode = true,
     this.fontSize = 14.0,
@@ -105,6 +109,7 @@ class AppSettings {
     this.fileViewers = kDefaultFileViewers,
     this.fileBrowserStartDir = kFileBrowserStartClaudeCode,
     this.prefillCommandFromTerminal = false,
+    this.showHiddenFilesByDefault = false,
   });
 
   bool get isAutoFit => adjustMode == 'autoFit';
@@ -142,6 +147,7 @@ class AppSettings {
     Map<String, String>? fileViewers,
     String? fileBrowserStartDir,
     bool? prefillCommandFromTerminal,
+    bool? showHiddenFilesByDefault,
   }) {
     return AppSettings(
       darkMode: darkMode ?? this.darkMode,
@@ -176,6 +182,8 @@ class AppSettings {
       fileBrowserStartDir: fileBrowserStartDir ?? this.fileBrowserStartDir,
       prefillCommandFromTerminal:
           prefillCommandFromTerminal ?? this.prefillCommandFromTerminal,
+      showHiddenFilesByDefault:
+          showHiddenFilesByDefault ?? this.showHiddenFilesByDefault,
     );
   }
 }
@@ -213,6 +221,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const String _fileViewersKey = 'settings_file_viewers';
   static const String _fileBrowserStartDirKey = 'settings_file_browser_start_dir';
   static const String _prefillCommandKey = 'settings_prefill_command_from_terminal';
+  static const String _showHiddenFilesKey = 'settings_show_hidden_files_default';
 
   /// Decode the file-viewers map from its stored JSON, falling back to the
   /// defaults when absent or unparseable. Keeps only entries whose value is a
@@ -283,6 +292,8 @@ class SettingsNotifier extends Notifier<AppSettings> {
           kFileBrowserStartClaudeCode,
       prefillCommandFromTerminal:
           prefs.getBool(_prefillCommandKey) ?? false,
+      showHiddenFilesByDefault:
+          prefs.getBool(_showHiddenFilesKey) ?? false,
     );
   }
 
@@ -499,6 +510,12 @@ class SettingsNotifier extends Notifier<AppSettings> {
   Future<void> setPrefillCommandFromTerminal(bool value) async {
     state = state.copyWith(prefillCommandFromTerminal: value);
     await _saveSetting(_prefillCommandKey, value);
+  }
+
+  /// Toggle opening the file browser with hidden files visible by default.
+  Future<void> setShowHiddenFilesByDefault(bool value) async {
+    state = state.copyWith(showHiddenFilesByDefault: value);
+    await _saveSetting(_showHiddenFilesKey, value);
   }
 
   /// Reload
