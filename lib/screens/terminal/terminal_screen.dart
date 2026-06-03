@@ -22,6 +22,7 @@ import '../../services/terminal/command_history.dart';
 import '../../services/terminal/font_calculator.dart';
 import '../../services/terminal/shell_history.dart';
 import '../../services/terminal/input_line_extractor.dart';
+import '../../services/terminal/keyboard_scroll.dart';
 import '../../services/tmux/tmux_commands.dart';
 import '../../services/tmux/tmux_parser.dart';
 import '../../services/tmux/tmux_version.dart';
@@ -164,6 +165,11 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
   @override
   void didChangeMetrics() {
     super.didChangeMetrics();
+
+    // Reveal the input line when the soft keyboard opens. Runs regardless of
+    // the auto-resize setting (it sits before the early-return below).
+    _handleKeyboardInsetChange();
+
     final settings = ref.read(settingsProvider);
     if (!settings.isAutoResize) return;
 
@@ -222,6 +228,8 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
     _keyOverlayState.dispose();
     _autoResizeDebounceTimer?.cancel();
     _autoResizeDebounceTimer = null;
+    _keyboardScrollTimer?.cancel();
+    _keyboardScrollTimer = null;
     // Dispose ValueNotifier
     _viewNotifier.dispose();
     // Remove listener and dispose scroll controller
