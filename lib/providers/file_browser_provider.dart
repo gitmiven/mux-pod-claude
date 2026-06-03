@@ -96,9 +96,12 @@ class FileBrowserNotifier extends Notifier<FileBrowserState> {
   /// Uses the CWD of the pane associated with [paneId] as the initial directory.
   /// Falls back to home directory if CWD cannot be retrieved.
   Future<void> initialize(String? connectionId, String? paneId) async {
-    // Clear previous error state
+    // Clear previous error state. Seed hidden-file visibility from the setting
+    // (the AppBar eye still overrides it per session).
     _log('initialize START (connectionId=$connectionId, paneId=$paneId)');
-    state = const FileBrowserState();
+    state = FileBrowserState(
+      showHidden: ref.read(settingsProvider).showHiddenFilesByDefault,
+    );
     _connectionId = connectionId;
 
     final tmuxState = ref.read(tmuxProvider);

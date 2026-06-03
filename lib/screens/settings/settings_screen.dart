@@ -344,6 +344,19 @@ class SettingsScreen extends ConsumerWidget {
                     settings.fileBrowserStartDir,
                   ),
                 ),
+                SwitchListTile(
+                  secondary: const Icon(Icons.visibility_outlined),
+                  title: const Text('Show hidden files by default'),
+                  subtitle: const Text(
+                    'Open the browser with dot-files (e.g. .claude) already visible',
+                  ),
+                  value: settings.showHiddenFilesByDefault,
+                  onChanged: (value) {
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setShowHiddenFilesByDefault(value);
+                  },
+                ),
                 const ListTile(
                   leading: Icon(Icons.visibility),
                   title: Text('Open files in-app'),
