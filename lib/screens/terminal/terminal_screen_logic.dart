@@ -724,10 +724,19 @@ mixin _TerminalScreenLogic on ConsumerState<TerminalScreen> {
     if (connection.authMethod == 'key' && connection.keyId != null) {
       final privateKey = await _secureStorage.getPrivateKey(connection.keyId!);
       final passphrase = await _secureStorage.getPassphrase(connection.keyId!);
-      return SshConnectOptions(privateKey: privateKey, passphrase: passphrase);
+      return SshConnectOptions(
+        privateKey: privateKey,
+        passphrase: passphrase,
+        tmuxPath: connection.tmuxPath,
+        tmuxSocket: connection.tmuxSocket,
+      );
     } else {
       final password = await _secureStorage.getPassword(connection.id);
-      return SshConnectOptions(password: password);
+      return SshConnectOptions(
+        password: password,
+        tmuxPath: connection.tmuxPath,
+        tmuxSocket: connection.tmuxSocket,
+      );
     }
   }
 

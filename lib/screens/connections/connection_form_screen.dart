@@ -36,6 +36,7 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _tmuxPathController = TextEditingController();
+  final _tmuxSocketController = TextEditingController();
   final _deepLinkIdController = TextEditingController();
 
   String _authMethod = 'password';
@@ -62,6 +63,7 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
       _authMethod = connection.authMethod;
       _selectedKeyId = connection.keyId;
       _tmuxPathController.text = connection.tmuxPath ?? '';
+      _tmuxSocketController.text = connection.tmuxSocket ?? '';
       _deepLinkIdController.text = connection.deepLinkId ?? '';
     }
   }
@@ -74,6 +76,7 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
     _usernameController.dispose();
     _passwordController.dispose();
     _tmuxPathController.dispose();
+    _tmuxSocketController.dispose();
     _deepLinkIdController.dispose();
     super.dispose();
   }
@@ -356,6 +359,11 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
               const SizedBox(height: 8),
               _buildTmuxPathInput(),
               const SizedBox(height: 16),
+              // tmux socket
+              _buildFieldLabel('TMUX SOCKET (OPTIONAL)'),
+              const SizedBox(height: 8),
+              _buildTmuxSocketInput(),
+              const SizedBox(height: 16),
               // Deep Link ID
               _buildFieldLabel('DEEP LINK ID (OPTIONAL)'),
               const SizedBox(height: 4),
@@ -637,6 +645,50 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
         const SizedBox(height: 6),
         Text(
           'Leave empty for automatic detection',
+          style: GoogleFonts.spaceGrotesk(
+            fontSize: 11,
+            color: mutedColor.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTmuxSocketInput() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mutedColor = isDark ? DesignColors.textMuted : DesignColors.textMutedLight;
+    final inputColor = isDark ? DesignColors.inputDark : DesignColors.inputLight;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: _tmuxSocketController,
+          style: GoogleFonts.jetBrainsMono(fontSize: 14, color: colorScheme.onSurface),
+          decoration: InputDecoration(
+            hintText: 'fleet  — or a /path  (default socket if empty)',
+            hintStyle: GoogleFonts.jetBrainsMono(color: mutedColor.withValues(alpha: 0.5)),
+            prefixIcon: Icon(Icons.hub_outlined, color: mutedColor, size: 20),
+            filled: true,
+            fillColor: inputColor,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: colorScheme.primary),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Name → tmux -L <name>; a value with “/” → tmux -S <path>',
           style: GoogleFonts.spaceGrotesk(
             fontSize: 11,
             color: mutedColor.withValues(alpha: 0.7),
@@ -964,6 +1016,7 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
 
       // SSH connection test.
       final customTmuxPath = _tmuxPathController.text.trim();
+      final customTmuxSocket = _tmuxSocketController.text.trim();
       await sshClient.connect(
         host: _hostController.text.trim(),
         port: int.tryParse(_portController.text) ?? 22,
@@ -973,6 +1026,7 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
           privateKey: privateKey,
           passphrase: passphrase,
           tmuxPath: customTmuxPath.isNotEmpty ? customTmuxPath : null,
+          tmuxSocket: customTmuxSocket.isNotEmpty ? customTmuxSocket : null,
         ),
       );
 
@@ -1038,6 +1092,7 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
       }
 
       final saveTmuxPath = _tmuxPathController.text.trim();
+      final saveTmuxSocket = _tmuxSocketController.text.trim();
       final saveDeepLinkId = _deepLinkIdController.text.trim();
       final connection = Connection(
         id: connectionId,
@@ -1048,6 +1103,7 @@ class _ConnectionFormScreenState extends ConsumerState<ConnectionFormScreen> {
         authMethod: _authMethod,
         keyId: _authMethod == 'key' ? _selectedKeyId : null,
         tmuxPath: saveTmuxPath.isNotEmpty ? saveTmuxPath : null,
+        tmuxSocket: saveTmuxSocket.isNotEmpty ? saveTmuxSocket : null,
         deepLinkId: saveDeepLinkId.isNotEmpty ? saveDeepLinkId : null,
         createdAt: widget.isEditing
             ? ref.read(connectionsProvider.notifier).getById(connectionId)?.createdAt ?? DateTime.now()

@@ -48,6 +48,10 @@ class SshConnectOptions {
   /// User-specified tmux path (auto-detect if null)
   final String? tmuxPath;
 
+  /// Optional non-default tmux socket (name → `tmux -L <name>`, or a path
+  /// containing `/` → `tmux -S <path>`). Null/empty ⇒ implicit default socket.
+  final String? tmuxSocket;
+
   /// Connection timeout (seconds)
   final int timeout;
 
@@ -56,6 +60,7 @@ class SshConnectOptions {
     this.privateKey,
     this.passphrase,
     this.tmuxPath,
+    this.tmuxSocket,
     this.timeout = 30,
   });
 }
@@ -137,6 +142,10 @@ class SshClient {
 
   /// Absolute path of detected tmux binary
   String? _tmuxPath;
+
+  /// Optional non-default tmux socket (name or path), normalized: trimmed-empty
+  /// ⇒ null. Applied as a global flag to every tmux invocation by the resolver.
+  String? _tmuxSocket;
 
   /// Lock for exclusive control of exec channel
   Completer<void>? _execLock;
@@ -257,6 +266,12 @@ class SshClient {
 
       _state = SshConnectionState.connected;
       _connectionStateController.add(_state);
+
+      // Record the optional non-default socket (normalize blank → null). Applied
+      // to every tmux invocation by _resolveTmuxCommand. Not validated here:
+      // correctness surfaces at list/attach time (consistent with tmuxPath).
+      final socket = options.tmuxSocket?.trim();
+      _tmuxSocket = (socket != null && socket.isNotEmpty) ? socket : null;
 
       // Detect tmux path (use user-specified if available, otherwise auto-detect)
       if (options.tmuxPath != null && options.tmuxPath!.isNotEmpty) {
@@ -508,7 +523,9 @@ class SshClient {
     // Rewrite EVERY command-position `tmux` (incl. after `| && ; (`) to the
     // detected absolute path, so piped/chained commands don't fall back to a
     // different tmux binary on PATH (which can mismatch the server's version).
-    final resolved = TmuxCommandResolver.resolve(command, _tmuxPath);
+    // Also append the optional global socket flag (-L/-S) to each token.
+    final resolved =
+        TmuxCommandResolver.resolve(command, _tmuxPath, tmuxSocket: _tmuxSocket);
     if (resolved != command) {
       AppLog.d('_resolveTmuxCommand: rewrote tmux to absolute path');
     }
@@ -762,9 +779,12 @@ class SshClient {
 
     final resolvedCommand = _resolveTmuxCommand(command);
 
-    // Fall back to traditional exec() if persistent shell is unavailable
+    // Fall back to traditional exec() if persistent shell is unavailable.
+    // exec() resolves the command itself, so pass the RAW command to it (not the
+    // already-resolved one) — resolving once keeps it idempotent (avoids a double
+    // `-L`/`-S` flag when the binary path wasn't detected and a socket is set).
     if (_persistentShell == null || !_persistentShell!.isStarted) {
-      return exec(resolvedCommand, timeout: timeout);
+      return exec(command, timeout: timeout);
     }
 
     try {
@@ -776,12 +796,12 @@ class SshClient {
           await restartPersistentShell();
           return await _persistentShell!.exec(resolvedCommand, timeout: timeout);
         } catch (_) {
-          // Fall back to traditional exec() if restart also fails
-          return exec(resolvedCommand, timeout: timeout);
+          // Fall back to traditional exec() if restart also fails (raw command).
+          return exec(command, timeout: timeout);
         }
       }
-      // Fall back to traditional exec() for other errors
-      return exec(resolvedCommand, timeout: timeout);
+      // Fall back to traditional exec() for other errors (raw command).
+      return exec(command, timeout: timeout);
     }
   }
 

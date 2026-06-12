@@ -105,10 +105,10 @@ class AlertPanesNotifier extends Notifier<AlertPanesState> {
       if (connection.authMethod == 'key' && connection.keyId != null) {
         final privateKey = await storage.getPrivateKey(connection.keyId!);
         final passphrase = await storage.getPassphrase(connection.keyId!);
-        options = SshConnectOptions(privateKey: privateKey, passphrase: passphrase, tmuxPath: connection.tmuxPath);
+        options = SshConnectOptions(privateKey: privateKey, passphrase: passphrase, tmuxPath: connection.tmuxPath, tmuxSocket: connection.tmuxSocket);
       } else {
         final password = await storage.getPassword(connection.id);
-        options = SshConnectOptions(password: password, tmuxPath: connection.tmuxPath);
+        options = SshConnectOptions(password: password, tmuxPath: connection.tmuxPath, tmuxSocket: connection.tmuxSocket);
       }
 
       final sshClient = SshClient();
@@ -145,10 +145,10 @@ class AlertPanesNotifier extends Notifier<AlertPanesState> {
         if (connection.authMethod == 'key' && connection.keyId != null) {
           final privateKey = await storage.getPrivateKey(connection.keyId!);
           final passphrase = await storage.getPassphrase(connection.keyId!);
-          options = SshConnectOptions(privateKey: privateKey, passphrase: passphrase, tmuxPath: connection.tmuxPath);
+          options = SshConnectOptions(privateKey: privateKey, passphrase: passphrase, tmuxPath: connection.tmuxPath, tmuxSocket: connection.tmuxSocket);
         } else {
           final password = await storage.getPassword(connection.id);
-          options = SshConnectOptions(password: password, tmuxPath: connection.tmuxPath);
+          options = SshConnectOptions(password: password, tmuxPath: connection.tmuxPath, tmuxSocket: connection.tmuxSocket);
         }
 
         final sshClient = SshClient();
