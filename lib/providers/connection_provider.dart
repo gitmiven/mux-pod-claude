@@ -14,6 +14,10 @@ class Connection {
   final String authMethod; // 'password' | 'key'
   final String? keyId;
   final String? tmuxPath;
+
+  /// Optional non-default tmux socket. A bare name targets `tmux -L <name>`;
+  /// a value containing `/` targets `tmux -S <path>`. Null ⇒ default socket.
+  final String? tmuxSocket;
   final DateTime createdAt;
   final DateTime? lastConnectedAt;
 
@@ -29,6 +33,7 @@ class Connection {
     this.authMethod = 'password',
     this.keyId,
     this.tmuxPath,
+    this.tmuxSocket,
     required this.createdAt,
     this.lastConnectedAt,
     this.deepLinkId,
@@ -43,6 +48,7 @@ class Connection {
     String? authMethod,
     String? keyId,
     String? tmuxPath,
+    String? tmuxSocket,
     DateTime? createdAt,
     DateTime? lastConnectedAt,
     String? deepLinkId,
@@ -57,6 +63,7 @@ class Connection {
       authMethod: authMethod ?? this.authMethod,
       keyId: keyId ?? this.keyId,
       tmuxPath: tmuxPath ?? this.tmuxPath,
+      tmuxSocket: tmuxSocket ?? this.tmuxSocket,
       createdAt: createdAt ?? this.createdAt,
       lastConnectedAt: lastConnectedAt ?? this.lastConnectedAt,
       deepLinkId: clearDeepLinkId ? null : (deepLinkId ?? this.deepLinkId),
@@ -73,6 +80,7 @@ class Connection {
       'authMethod': authMethod,
       'keyId': keyId,
       'tmuxPath': tmuxPath,
+      'tmuxSocket': tmuxSocket,
       'createdAt': createdAt.toIso8601String(),
       'lastConnectedAt': lastConnectedAt?.toIso8601String(),
       'deepLinkId': deepLinkId,
@@ -89,6 +97,7 @@ class Connection {
       authMethod: json['authMethod'] as String? ?? 'password',
       keyId: json['keyId'] as String?,
       tmuxPath: json['tmuxPath'] as String?,
+      tmuxSocket: json['tmuxSocket'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastConnectedAt: json['lastConnectedAt'] != null
           ? DateTime.parse(json['lastConnectedAt'] as String)
